@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { RootState, AppDispatch } from '../../../store';
 import { fetchSketches, deleteSketch } from '../../../store/slices/sketchesSlice';
 import { setActiveSketchKey, setSketchTemplate } from '../../../store/slices/canvasSlice';
+import { deleteLocalSketch } from '../../../store/slices/localSketchesSlice';
 import { Sketch } from '../../../services/sketchService';
 import { Alert } from 'react-native';
 
@@ -33,8 +34,9 @@ export const SketchesProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     shallowEqual,
   );
   const sketches: Sketch[] = useSelector((state: RootState) => {
-    const list = selectedId ? (state.sketches.itemsByProject[selectedId] ?? []) : [];
-    return [...list].sort(
+    const apiList = selectedId ? (state.sketches.itemsByProject[selectedId] ?? []) : [];
+    const localList = selectedId ? (state.localSketches?.itemsByProject?.[selectedId] ?? []) : [];
+    return [...apiList, ...localList].sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
   }, shallowEqual);
@@ -52,7 +54,10 @@ export const SketchesProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const handleOpenCanvas = useCallback((sketch: Sketch) => {
     if (!selectedId) return;
     dispatch(setActiveSketchKey(sketch.id));
-    dispatch(setSketchTemplate({ sketchKey: sketch.id, templateUrl: sketch.imageUrl ?? null }));
+    // For local sketches, paths are already in canvas state — no template to set from imageUrl
+    if (!(sketch as any).isLocal) {
+      dispatch(setSketchTemplate({ sketchKey: sketch.id, templateUrl: sketch.imageUrl ?? null }));
+    }
     navigation.navigate('Canvas', { editSketchId: sketch.id, editSketchName: sketch.name });
   }, [selectedId]);
 
@@ -63,7 +68,13 @@ export const SketchesProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: () => dispatch(deleteSketch({ projectId: selectedId, sketchId: sketch.id })),
+        onPress: () => {
+          if ((sketch as any).isLocal) {
+            dispatch(deleteLocalSketch({ projectId: selectedId, sketchId: sketch.id }));
+          } else {
+            dispatch(deleteSketch({ projectId: selectedId, sketchId: sketch.id }));
+          }
+        },
       },
     ]);
   }, [selectedId]);

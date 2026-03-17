@@ -63,7 +63,8 @@ let FirebaseStorageService = class FirebaseStorageService {
         await fileRef.save(file.buffer, {
             metadata: { contentType: file.mimetype },
         });
-        return `https://storage.googleapis.com/${this.bucket.name}/${fileName}`;
+        await fileRef.makePublic();
+        return fileRef.publicUrl();
     }
 };
 exports.FirebaseStorageService = FirebaseStorageService;

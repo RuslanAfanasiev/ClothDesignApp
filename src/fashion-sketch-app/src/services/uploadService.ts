@@ -8,7 +8,7 @@ const uploadService = {
     const res = await apiClient.post(API_ENDPOINTS.UPLOAD, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
-    return res.data.url;
+    return res.data?.data?.url ?? res.data?.url;
   },
 };
 

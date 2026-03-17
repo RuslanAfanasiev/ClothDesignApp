@@ -17,10 +17,11 @@ import { useFonts, PlayfairDisplay_700Bold_Italic } from '@expo-google-fonts/pla
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../../../store';
 import { useTheme } from '../../../theme/ThemeContext';
-import { setAISuggesting, setActiveSketchKey, setSketchTemplate } from '../../../store/slices/canvasSlice';
+import { setAISuggesting, setActiveSketchKey, setSketchTemplate, migrateSketchKey } from '../../../store/slices/canvasSlice';
 import * as MediaLibrary from 'expo-media-library';
 import uploadService from '../../../services/uploadService';
 import { createSketch, updateSketch } from '../../../store/slices/sketchesSlice';
+import { saveLocalSketch, updateLocalSketch } from '../../../store/slices/localSketchesSlice';
 import { RootStackParamList } from '../../../navigation/types';
 import DrawingCanvas, { DrawingCanvasHandle } from '../components/DrawingCanvas';
 import BottomToolbar from '../components/BottomToolbar';
@@ -36,7 +37,9 @@ const CanvasScreen: React.FC = () => {
   const canvasRef = useRef<DrawingCanvasHandle>(null);
   const [saving, setSaving] = useState(false);
   const [savingDevice, setSavingDevice] = useState(false);
+  const [savingLocal, setSavingLocal] = useState(false);
   const [nameModalVisible, setNameModalVisible] = useState(false);
+  const [localNameModalVisible, setLocalNameModalVisible] = useState(false);
   const [sketchName, setSketchName] = useState('');
   const selectedId = useSelector((state: RootState) => state.projects.selectedId);
   const project = useSelector((state: RootState) =>
@@ -107,6 +110,43 @@ const CanvasScreen: React.FC = () => {
       Alert.alert('Error', err.response?.data?.message ?? err.message ?? 'Could not save to cloud.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const openLocalSaveModal = () => {
+    if (!selectedId) return;
+    // If already a saved local sketch — update silently (paths persist automatically)
+    if (activeSketchKey?.startsWith('local_')) {
+      if (editSketchId) {
+        dispatch(updateLocalSketch({ projectId: selectedId, sketchId: editSketchId, name: editSketchName ?? defaultSketchName() }));
+      }
+      Alert.alert('Saved', 'Sketch updated in Sketches.');
+      return;
+    }
+    // New sketch — ask for name
+    setSketchName(defaultSketchName());
+    setLocalNameModalVisible(true);
+  };
+
+  const handleSaveLocal = () => {
+    if (!selectedId || !sketchName.trim() || !activeSketchKey) return;
+    setSavingLocal(true);
+    try {
+      const localId = `local_${Date.now()}`;
+      const now = new Date().toISOString();
+      dispatch(migrateSketchKey({ fromKey: activeSketchKey, toKey: localId }));
+      dispatch(saveLocalSketch({
+        id: localId,
+        name: sketchName.trim(),
+        projectId: selectedId,
+        createdAt: now,
+        updatedAt: now,
+        isLocal: true,
+      }));
+      setLocalNameModalVisible(false);
+      Alert.alert('Saved', `"${sketchName.trim()}" saved to Sketches.`);
+    } finally {
+      setSavingLocal(false);
     }
   };
 
@@ -196,6 +236,8 @@ const CanvasScreen: React.FC = () => {
             savingCloud={saving}
             onSaveDevice={handleSaveDevice}
             savingDevice={savingDevice}
+            onSaveLocal={openLocalSaveModal}
+            savingLocal={savingLocal}
           />
         </View>
       </SafeAreaView>
@@ -247,6 +289,57 @@ const CanvasScreen: React.FC = () => {
                   <Text style={[saveModalStyles.saveBtnText, { color: colors.background }]}>
                     {isEditing ? 'Update' : 'Save'}
                   </Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Local Save Modal */}
+      <Modal
+        visible={localNameModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLocalNameModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={[saveModalStyles.overlay, { backgroundColor: colors.overlay }]}
+        >
+          <View style={[saveModalStyles.card, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
+            <View style={[saveModalStyles.cornerTL, { borderColor: colors.gold }]} />
+            <View style={[saveModalStyles.cornerBR, { borderColor: colors.gold }]} />
+
+            <Text style={[saveModalStyles.title, { color: colors.offWhite }]}>Save to Sketches</Text>
+            <View style={[saveModalStyles.divider, { backgroundColor: colors.border }]} />
+
+            <Text style={[saveModalStyles.label, { color: colors.grayLight }]}>Sketch Name</Text>
+            <TextInput
+              style={[saveModalStyles.input, { backgroundColor: colors.surface, borderColor: colors.gold, color: colors.offWhite }]}
+              value={sketchName}
+              onChangeText={setSketchName}
+              placeholder="e.g. Front View"
+              placeholderTextColor={colors.gray}
+              selectionColor={colors.gold}
+              autoFocus
+              selectTextOnFocus
+            />
+
+            <View style={saveModalStyles.actions}>
+              <TouchableOpacity
+                onPress={() => setLocalNameModalVisible(false)}
+                style={[saveModalStyles.cancelBtn, { borderColor: colors.border }]}
+              >
+                <Text style={[saveModalStyles.cancelText, { color: colors.grayLight }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleSaveLocal}
+                disabled={!sketchName.trim() || savingLocal}
+                activeOpacity={0.85}
+              >
+                <View style={[saveModalStyles.saveBtn, { backgroundColor: sketchName.trim() ? colors.gold : colors.gray }]}>
+                  <Text style={[saveModalStyles.saveBtnText, { color: colors.background }]}>Save</Text>
                 </View>
               </TouchableOpacity>
             </View>

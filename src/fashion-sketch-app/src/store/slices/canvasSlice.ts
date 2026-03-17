@@ -120,6 +120,21 @@ const canvasSlice = createSlice({
       const { sketchKey, templateUrl } = action.payload;
       state.templateBySketch[sketchKey] = templateUrl;
     },
+    migrateSketchKey(
+      state,
+      action: PayloadAction<{ fromKey: string; toKey: string }>,
+    ) {
+      const { fromKey, toKey } = action.payload;
+      if (state.pathsBySketch[fromKey]) {
+        state.pathsBySketch[toKey] = state.pathsBySketch[fromKey];
+        delete state.pathsBySketch[fromKey];
+      }
+      if (state.templateBySketch[fromKey] !== undefined) {
+        state.templateBySketch[toKey] = state.templateBySketch[fromKey];
+        delete state.templateBySketch[fromKey];
+      }
+      state.activeSketchKey = toKey;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -151,6 +166,7 @@ export const {
   setAISuggesting,
   clearAISuggestions,
   setSketchTemplate,
+  migrateSketchKey,
 } = canvasSlice.actions;
 
 export default canvasSlice.reducer;

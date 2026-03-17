@@ -16,21 +16,22 @@ import { setActiveTool, undo, ToolType } from '../../../store/slices/canvasSlice
 import { useTheme } from '../../../theme/ThemeContext';
 
 interface Tool {
-  id: ToolType | 'undo' | 'cloud' | 'download' | 'template';
+  id: ToolType | 'undo' | 'cloud' | 'download' | 'template' | 'save_local';
   icon: string;
   label: string;
 }
 
 const TOOLS: Tool[] = [
-  { id: 'pen',      icon: '✏️', label: 'Pen' },
-  { id: 'shape',    icon: '◇',  label: 'Shape' },
-  { id: 'fabric',   icon: '⬡',  label: 'Fabric' },
-  { id: 'color',    icon: '◉',  label: 'Color' },
-  { id: 'undo',     icon: '↩',  label: 'Undo' },
-  { id: 'zoom',     icon: '⊕',  label: 'Zoom' },
-  { id: 'template', icon: '◧',  label: 'Template' },
-  { id: 'download', icon: '↓',  label: 'PNG' },
-  { id: 'cloud',    icon: '☁',  label: 'Cloud' },
+  { id: 'pen',        icon: '✏️', label: 'Pen' },
+  { id: 'shape',      icon: '◇',  label: 'Shape' },
+  { id: 'fabric',     icon: '⬡',  label: 'Fabric' },
+  { id: 'color',      icon: '◉',  label: 'Color' },
+  { id: 'undo',       icon: '↩',  label: 'Undo' },
+  { id: 'zoom',       icon: '⊕',  label: 'Zoom' },
+  { id: 'template',   icon: '◧',  label: 'Template' },
+  { id: 'save_local', icon: '◈',  label: 'Sketch' },
+  { id: 'download',   icon: '↓',  label: 'PNG' },
+  { id: 'cloud',      icon: '☁',  label: 'Cloud' },
 ];
 
 interface Props {
@@ -38,22 +39,26 @@ interface Props {
   savingCloud?: boolean;
   onSaveDevice?: () => void;
   savingDevice?: boolean;
+  onSaveLocal?: () => void;
+  savingLocal?: boolean;
 }
 
-const BottomToolbar: React.FC<Props> = ({ onSaveCloud, savingCloud, onSaveDevice, savingDevice }) => {
+const BottomToolbar: React.FC<Props> = ({ onSaveCloud, savingCloud, onSaveDevice, savingDevice, onSaveLocal, savingLocal }) => {
   const dispatch = useDispatch<AppDispatch>();
   const navigation = useNavigation<any>();
   const activeTool = useSelector((state: RootState) => state.canvas.activeTool);
   const activeSketchKey = useSelector((state: RootState) => state.canvas.activeSketchKey);
   const { colors } = useTheme();
 
-  const handlePress = (id: ToolType | 'undo' | 'cloud' | 'download' | 'template') => {
+  const handlePress = (id: ToolType | 'undo' | 'cloud' | 'download' | 'template' | 'save_local') => {
     if (id === 'undo' && activeSketchKey) {
       dispatch(undo(activeSketchKey));
     } else if (id === 'cloud') {
       onSaveCloud?.();
     } else if (id === 'download') {
       onSaveDevice?.();
+    } else if (id === 'save_local') {
+      onSaveLocal?.();
     } else if (id === 'template') {
       navigation.navigate('Main', { screen: 'Templates' });
     } else if (id !== 'undo') {
@@ -76,8 +81,9 @@ const BottomToolbar: React.FC<Props> = ({ onSaveCloud, savingCloud, onSaveDevice
             const isActive = activeTool === tool.id;
             const isCloud = tool.id === 'cloud';
             const isDownload = tool.id === 'download';
-            const isGold = isCloud || isDownload;
-            const isBusy = (isCloud && savingCloud) || (isDownload && savingDevice);
+            const isSaveLocal = tool.id === 'save_local';
+            const isGold = isCloud || isDownload || isSaveLocal;
+            const isBusy = (isCloud && savingCloud) || (isDownload && savingDevice) || (isSaveLocal && savingLocal);
             return (
               <TouchableOpacity
                 key={tool.id}

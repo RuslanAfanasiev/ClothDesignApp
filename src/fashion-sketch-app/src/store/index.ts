@@ -9,6 +9,7 @@ import canvasReducer from './slices/canvasSlice';
 import projectsReducer from './slices/projectsSlice';
 import sketchesReducer from './slices/sketchesSlice';
 import templatesReducer from './slices/templatesSlice';
+import localSketchesReducer from './slices/localSketchesSlice';
 
 const RESET_STORE = 'store/reset';
 
@@ -28,11 +29,18 @@ const projectsPersistConfig = {
   whitelist: ['selectedId'],
 };
 
+// Persist all local sketches
+const localSketchesPersistConfig = {
+  key: 'localSketches',
+  storage: AsyncStorage,
+};
+
 const combinedReducer = combineReducers({
   canvas: persistReducer(canvasPersistConfig, canvasReducer),
   projects: persistReducer(projectsPersistConfig, projectsReducer),
   sketches: sketchesReducer,
   templates: templatesReducer,
+  localSketches: persistReducer(localSketchesPersistConfig, localSketchesReducer),
 });
 
 const rootReducer = (state: ReturnType<typeof combinedReducer> | undefined, action: any) => {

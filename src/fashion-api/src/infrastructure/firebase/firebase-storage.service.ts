@@ -19,6 +19,8 @@ export class FirebaseStorageService {
       metadata: { contentType: file.mimetype },
     });
 
-    return `https://storage.googleapis.com/${this.bucket.name}/${fileName}`;
+    await fileRef.makePublic();
+
+    return fileRef.publicUrl();
   }
 }
