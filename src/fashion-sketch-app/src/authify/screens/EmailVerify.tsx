@@ -8,7 +8,8 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import axios from 'axios';
+import authClient from '../../services/authClient';
+import { API_ENDPOINTS } from '../../config/api.config';
 import { useAppContext } from '../context/AppContext';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -18,14 +19,14 @@ type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 const EmailVerify = () => {
   const navigation = useNavigation<NavProp>();
-  const { backendUrl, getUserData, userData, isLoggedIn } = useAppContext();
+  const { getUserData, userData, isLoggedIn } = useAppContext();
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const inputs = useRef<(TextInput | null)[]>([]);
 
   useEffect(() => {
     if (isLoggedIn && userData && userData.isAccountVerified) {
-      navigation.navigate('Home');
+      navigation.navigate('Main');
     }
   }, [isLoggedIn, userData]);
 
@@ -52,11 +53,11 @@ const EmailVerify = () => {
     }
     setLoading(true);
     try {
-      const response = await axios.post(backendUrl + '/verify-otp', { otp: otpValue });
+      const response = await authClient.post(API_ENDPOINTS.AUTH.VERIFY_OTP, { otp: otpValue });
       if (response.status === 200) {
         Alert.alert('Succes', 'OTP verificat cu succes');
         await getUserData();
-        navigation.navigate('Home');
+        navigation.navigate('Main');
       } else {
         Alert.alert('Eroare', 'OTP invalid');
       }

@@ -18,6 +18,7 @@ export interface StrokePath {
 interface CanvasState {
   pathsByProject: Record<string, StrokePath[]>;
   historyByProject: Record<string, StrokePath[][]>;
+  templateByProject: Record<string, string | null>;
   activeTool: ToolType;
   activeColor: string;
   strokeWidth: number;
@@ -28,6 +29,7 @@ interface CanvasState {
 const initialState: CanvasState = {
   pathsByProject: {},
   historyByProject: {},
+  templateByProject: {},
   activeTool: 'pen',
   activeColor: '#D4AF37',
   strokeWidth: 2,
@@ -81,6 +83,10 @@ const canvasSlice = createSlice({
     setAISuggesting(state, action: PayloadAction<boolean>) {
       state.isAISuggesting = action.payload;
     },
+    setProjectTemplate(state, action: PayloadAction<{ projectId: string; templateUrl: string | null }>) {
+      const { projectId, templateUrl } = action.payload;
+      state.templateByProject[projectId] = templateUrl;
+    },
   },
 });
 
@@ -94,6 +100,7 @@ export const {
   setStrokeWidth,
   setZoom,
   setAISuggesting,
+  setProjectTemplate,
 } = canvasSlice.actions;
 
 export default canvasSlice.reducer;

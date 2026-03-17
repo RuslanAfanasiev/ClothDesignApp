@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { PanResponder, View, StyleSheet, Dimensions } from 'react-native';
+import { PanResponder, View, Image, StyleSheet, Dimensions } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../../../store';
@@ -20,11 +20,12 @@ const DrawingCanvas = React.forwardRef<View, {}>((_, ref) => {
   const dispatch = useDispatch<AppDispatch>();
 
   const selectedId = useSelector((state: RootState) => state.projects.selectedId);
-  const { activeColor, strokeWidth, pathsByProject } = useSelector(
+  const { activeColor, strokeWidth, pathsByProject, templateByProject } = useSelector(
     (state: RootState) => state.canvas,
   );
 
   const paths = selectedId ? (pathsByProject[selectedId] ?? []) : [];
+  const templateUrl = selectedId ? (templateByProject[selectedId] ?? null) : null;
 
   // Refs so PanResponder always reads the latest values (avoids stale closure)
   const activeColorRef = useRef(activeColor);
@@ -39,8 +40,11 @@ const DrawingCanvas = React.forwardRef<View, {}>((_, ref) => {
 
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponder: (evt) => {
+        // Nu intercepta touch-uri din afara canvas-ului (header zone)
+        return evt.nativeEvent.locationY > 0;
+      },
+      onMoveShouldSetPanResponder: () => isDrawing.current,
 
       onPanResponderGrant: (evt) => {
         const projectId = selectedIdRef.current;
@@ -72,6 +76,16 @@ const DrawingCanvas = React.forwardRef<View, {}>((_, ref) => {
 
   return (
     <View ref={ref} style={styles.container} {...panResponder.panHandlers}>
+      {/* Layer 1: template base image */}
+      {templateUrl && (
+        <Image
+          source={{ uri: templateUrl }}
+          style={styles.templateLayer}
+          resizeMode="contain"
+          pointerEvents="none"
+        />
+      )}
+      {/* Layer 2: user drawing paths */}
       <Svg width={width} height={height} style={StyleSheet.absoluteFillObject}>
         {paths.map((path) => (
           <Path
@@ -92,7 +106,10 @@ const DrawingCanvas = React.forwardRef<View, {}>((_, ref) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.surface,
+    backgroundColor: '#FFFFFF',
+  },
+  templateLayer: {
+    ...StyleSheet.absoluteFillObject,
   },
 });
 

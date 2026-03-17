@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import axios from 'axios';
-import { AppConstants } from '../../authify/constants';
+import projectService, { CreateProjectDto, UpdateProjectDto } from '../../services/projectService';
+import { normalizeError } from '../../utils/normalizeError';
 
 export type ProjectStatus = 'DRAFT' | 'IN_PROGRESS' | 'COMPLETED';
 
@@ -34,22 +34,43 @@ export const fetchProjects = createAsyncThunk(
   'projects/fetchAll',
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${AppConstants.API_URL}/projects`);
-      return res.data?.data ?? res.data;
+      return await projectService.fetchAll();
     } catch (err: any) {
-      return rejectWithValue(err.response?.data?.message ?? 'Failed to load projects');
+      return rejectWithValue(normalizeError(err, 'Failed to load projects'));
     }
   },
 );
 
 export const createProject = createAsyncThunk(
   'projects/create',
-  async (payload: { name: string; description?: string }, { rejectWithValue }) => {
+  async (dto: CreateProjectDto, { rejectWithValue }) => {
     try {
-      const res = await axios.post(`${AppConstants.API_URL}/projects`, payload);
-      return res.data?.data ?? res.data;
+      return await projectService.create(dto);
     } catch (err: any) {
-      return rejectWithValue(err.response?.data?.message ?? 'Failed to create project');
+      return rejectWithValue(normalizeError(err, 'Failed to create project'));
+    }
+  },
+);
+
+export const updateProject = createAsyncThunk(
+  'projects/update',
+  async ({ id, dto }: { id: string; dto: UpdateProjectDto }, { rejectWithValue }) => {
+    try {
+      return await projectService.update(id, dto);
+    } catch (err: any) {
+      return rejectWithValue(normalizeError(err, 'Failed to update project'));
+    }
+  },
+);
+
+export const deleteProject = createAsyncThunk(
+  'projects/delete',
+  async (id: string, { rejectWithValue }) => {
+    try {
+      await projectService.delete(id);
+      return id;
+    } catch (err: any) {
+      return rejectWithValue(normalizeError(err, 'Failed to delete project'));
     }
   },
 );
@@ -81,6 +102,18 @@ const projectsSlice = createSlice({
       })
       .addCase(createProject.fulfilled, (state, action) => {
         state.items.unshift(action.payload);
+      })
+      .addCase(updateProject.fulfilled, (state, action) => {
+        const idx = state.items.findIndex((p) => p.id === action.payload.id);
+        if (idx !== -1) {
+          state.items[idx] = action.payload;
+        }
+      })
+      .addCase(deleteProject.fulfilled, (state, action) => {
+        state.items = state.items.filter((p) => p.id !== action.payload);
+        if (state.selectedId === action.payload) {
+          state.selectedId = null;
+        }
       });
   },
 });

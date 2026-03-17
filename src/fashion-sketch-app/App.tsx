@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Provider } from "react-redux";
 import { View, ActivityIndicator } from "react-native";
 import { AppContextProvider, useAppContext } from "./src/authify/context/AppContext";
+import { ThemeProvider, useTheme } from "./src/theme/ThemeContext";
 import { store } from "./src/store";
 import { RootStackParamList } from "./src/navigation/types";
 import Login from "./src/authify/screens/Login";
@@ -10,17 +11,17 @@ import EmailVerify from "./src/authify/screens/EmailVerify";
 import ResetPassword from "./src/authify/screens/ResetPassword";
 import TabNavigator from "./src/navigation/TabNavigator";
 import CanvasScreen from "./src/pages/sketch/CanvasScreen";
-import { Colors } from "./src/theme/colors";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const RootNavigator = () => {
   const { isLoggedIn, isAuthLoading } = useAppContext();
+  const { colors } = useTheme();
 
   if (isAuthLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={Colors.gold} size="large" />
+      <View style={{ flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color={colors.gold} size="large" />
       </View>
     );
   }
@@ -46,11 +47,13 @@ const RootNavigator = () => {
 export default function App() {
   return (
     <Provider store={store}>
-      <AppContextProvider>
-        <NavigationContainer>
-          <RootNavigator />
-        </NavigationContainer>
-      </AppContextProvider>
+      <ThemeProvider>
+        <AppContextProvider>
+          <NavigationContainer>
+            <RootNavigator />
+          </NavigationContainer>
+        </AppContextProvider>
+      </ThemeProvider>
     </Provider>
   );
 }

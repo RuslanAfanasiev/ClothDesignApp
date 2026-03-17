@@ -7,7 +7,8 @@ import {
   Modal,
   Alert,
 } from 'react-native';
-import axios from 'axios';
+import authClient from '../../services/authClient';
+import { API_ENDPOINTS } from '../../config/api.config';
 import { useAppContext } from '../context/AppContext';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -17,13 +18,13 @@ type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 const Menubar = () => {
   const navigation = useNavigation<NavProp>();
-  const { userData, backendUrl, setUserData, setIsLoggedIn, clearToken } = useAppContext();
+  const { userData, setUserData, setIsLoggedIn, clearToken } = useAppContext();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const handleLogout = async () => {
     setDropdownOpen(false);
     try {
-      await axios.post(backendUrl + '/logout');
+      await authClient.post(API_ENDPOINTS.AUTH.LOGOUT);
     } catch (_) {}
     await clearToken();
     setIsLoggedIn(false);
@@ -33,7 +34,7 @@ const Menubar = () => {
   const sendVerificationOtp = async () => {
     setDropdownOpen(false);
     try {
-      await axios.post(backendUrl + '/send-otp');
+      await authClient.post(API_ENDPOINTS.AUTH.SEND_OTP);
       Alert.alert('Succes', 'OTP trimis cu succes');
       navigation.navigate('EmailVerify');
     } catch (error: any) {

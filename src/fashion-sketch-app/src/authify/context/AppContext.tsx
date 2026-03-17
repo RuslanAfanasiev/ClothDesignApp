@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
-import { AppConstants } from '../constants';
+import authClient, { setAuthToken, clearAuthToken } from '../../services/authClient';
+import { setAuthToken as setApiToken, clearAuthToken as clearApiToken } from '../../services/apiClient';
+import { API_ENDPOINTS, AUTH_BASE_URL } from '../../config/api.config';
 
 const JWT_KEY = 'jwt_token';
 
@@ -28,29 +29,31 @@ export const AppContext = createContext<AppContextType>({} as AppContextType);
 export const useAppContext = () => useContext(AppContext);
 
 export const AppContextProvider = ({ children }: { children: React.ReactNode }) => {
-  const backendUrl = AppConstants.BACKEND_URL;
+  const backendUrl = AUTH_BASE_URL;
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [userData, setUserData] = useState<UserData | null>(null);
 
   const saveToken = async (token: string) => {
     await SecureStore.setItemAsync(JWT_KEY, token);
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    setAuthToken(token);
+    setApiToken(token);
   };
 
   const clearToken = async () => {
     await SecureStore.deleteItemAsync(JWT_KEY);
-    delete axios.defaults.headers.common['Authorization'];
+    clearAuthToken();
+    clearApiToken();
   };
 
   const getUserData = async () => {
     try {
-      const response = await axios.get(backendUrl + '/profile');
+      const response = await authClient.get(API_ENDPOINTS.AUTH.PROFILE);
       if (response.status === 200) {
         setUserData(response.data);
       }
     } catch (error) {
-      // utilizatorul nu e autentificat
+      // user is not authenticated
     }
   };
 
@@ -61,8 +64,9 @@ export const AppContextProvider = ({ children }: { children: React.ReactNode }) 
         setIsLoggedIn(false);
         return;
       }
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      const response = await axios.get(backendUrl + '/is-authenticated');
+      setAuthToken(token);
+      setApiToken(token);
+      const response = await authClient.get(API_ENDPOINTS.AUTH.IS_AUTHENTICATED);
       if (response.status === 200 && response.data === true) {
         setIsLoggedIn(true);
         await getUserData();
@@ -87,6 +91,7 @@ export const AppContextProvider = ({ children }: { children: React.ReactNode }) 
       value={{
         backendUrl,
         isLoggedIn,
+        isAuthLoading,
         setIsLoggedIn,
         userData,
         setUserData,

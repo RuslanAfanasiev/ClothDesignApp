@@ -10,13 +10,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../../../store';
 import { setAISuggesting } from '../../../store/slices/canvasSlice';
-import { Colors } from '../../../theme/colors';
+import { useTheme } from '../../../theme/ThemeContext';
 
 const AISuggestionButton: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const isAISuggesting = useSelector(
     (state: RootState) => state.canvas.isAISuggesting,
   );
+  const { colors } = useTheme();
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
@@ -67,23 +68,23 @@ const AISuggestionButton: React.FC = () => {
         activeOpacity={0.85}
       >
         <LinearGradient
-          colors={[Colors.goldLight, Colors.gold, Colors.goldDim]}
+          colors={[colors.goldLight, colors.gold, colors.goldDim]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={styles.button}
+          style={[styles.button, { shadowColor: colors.gold }]}
         >
           <Animated.Text
-            style={[styles.icon, { transform: [{ rotate }] }]}
+            style={[styles.icon, { color: colors.background, transform: [{ rotate }] }]}
           >
             ✦
           </Animated.Text>
-          <Text style={styles.label}>AI</Text>
+          <Text style={[styles.label, { color: colors.background }]}>AI</Text>
         </LinearGradient>
       </TouchableOpacity>
 
       {isAISuggesting && (
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>●</Text>
+        <View style={[styles.badge, { borderColor: colors.background }]}>
+          <Text style={[styles.badgeText, { color: colors.background }]}>●</Text>
         </View>
       )}
     </Animated.View>
@@ -103,7 +104,6 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: Colors.gold,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.5,
     shadowRadius: 12,
@@ -111,12 +111,10 @@ const styles = StyleSheet.create({
   },
   icon: {
     fontSize: 16,
-    color: Colors.background,
     fontWeight: 'bold',
   },
   label: {
     fontSize: 9,
-    color: Colors.background,
     fontWeight: '700',
     letterSpacing: 1,
     marginTop: 1,
@@ -132,11 +130,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: Colors.background,
   },
   badgeText: {
     fontSize: 6,
-    color: Colors.background,
   },
 });
 

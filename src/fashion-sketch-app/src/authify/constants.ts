@@ -1,4 +1,6 @@
+import { API_BASE_URL, AUTH_BASE_URL } from '../config/api.config';
+
 export const AppConstants = {
-  BACKEND_URL: 'http://192.168.0.140:8080/api/v1.0',
-  API_URL: 'http://192.168.0.140:3000/api/v1',
+  BACKEND_URL: AUTH_BASE_URL,
+  API_URL: API_BASE_URL,
 };

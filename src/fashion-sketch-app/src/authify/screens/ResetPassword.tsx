@@ -8,11 +8,12 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import axios from 'axios';
+import authClient from '../../services/authClient';
+import { API_ENDPOINTS } from '../../config/api.config';
 import { useAppContext } from '../context/AppContext';
 
 const ResetPassword = () => {
-  const { backendUrl } = useAppContext();
+  useAppContext();
   const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -25,7 +26,7 @@ const ResetPassword = () => {
   const onSubmitEmail = async () => {
     setLoading(true);
     try {
-      await axios.post(`${backendUrl}/send-reset-otp?email=${email}`);
+      await authClient.post(`${API_ENDPOINTS.AUTH.SEND_RESET_OTP}?email=${email}`);
       Alert.alert('Succes', 'Codul OTP a fost trimis pe email');
       setIsEmailSent(true);
     } catch (error: any) {
@@ -63,7 +64,7 @@ const ResetPassword = () => {
   const onResetPassword = async () => {
     setLoading(true);
     try {
-      await axios.post(`${backendUrl}/reset-password`, { email, otp: otpValue, newPassword });
+      await authClient.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, { email, otp: otpValue, newPassword });
       Alert.alert('Succes', 'Parola a fost resetată cu succes');
     } catch (error: any) {
       Alert.alert('Eroare', error.response?.data?.message || error.message);

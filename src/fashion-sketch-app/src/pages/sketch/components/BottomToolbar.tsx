@@ -5,69 +5,107 @@ import {
   StyleSheet,
   Text,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../../../store';
 import { setActiveTool, undo, ToolType } from '../../../store/slices/canvasSlice';
-import { Colors } from '../../../theme/colors';
-import { RootState } from '../../../store';
+import { useTheme } from '../../../theme/ThemeContext';
 
 interface Tool {
-  id: ToolType | 'undo';
+  id: ToolType | 'undo' | 'download' | 'cloud' | 'template';
   icon: string;
   label: string;
 }
 
 const TOOLS: Tool[] = [
-  { id: 'pen',    icon: '✏️', label: 'Pen' },
-  { id: 'shape',  icon: '◇',  label: 'Shape' },
-  { id: 'fabric', icon: '⬡',  label: 'Fabric' },
-  { id: 'color',  icon: '◉',  label: 'Color' },
-  { id: 'undo',   icon: '↩',  label: 'Undo' },
-  { id: 'zoom',   icon: '⊕',  label: 'Zoom' },
+  { id: 'pen',      icon: '✏️', label: 'Pen' },
+  { id: 'shape',    icon: '◇',  label: 'Shape' },
+  { id: 'fabric',   icon: '⬡',  label: 'Fabric' },
+  { id: 'color',    icon: '◉',  label: 'Color' },
+  { id: 'undo',     icon: '↩',  label: 'Undo' },
+  { id: 'zoom',     icon: '⊕',  label: 'Zoom' },
+  { id: 'template', icon: '◧',  label: 'Template' },
+  { id: 'download', icon: '⬇',  label: 'Device' },
+  { id: 'cloud',    icon: '☁',  label: 'Cloud' },
 ];
 
-const BottomToolbar: React.FC = () => {
+interface Props {
+  onSaveCloud?: () => void;
+  onSaveDevice?: () => void;
+  savingCloud?: boolean;
+  savingDevice?: boolean;
+}
+
+const BottomToolbar: React.FC<Props> = ({ onSaveCloud, onSaveDevice, savingCloud, savingDevice }) => {
   const dispatch = useDispatch<AppDispatch>();
+  const navigation = useNavigation<any>();
   const activeTool = useSelector((state: RootState) => state.canvas.activeTool);
   const selectedId = useSelector((state: RootState) => state.projects.selectedId);
+  const { colors } = useTheme();
 
-  const handlePress = (id: ToolType | 'undo') => {
+  const handlePress = (id: ToolType | 'undo' | 'download' | 'cloud' | 'template') => {
     if (id === 'undo' && selectedId) {
       dispatch(undo(selectedId));
+    } else if (id === 'download') {
+      onSaveDevice?.();
+    } else if (id === 'cloud') {
+      onSaveCloud?.();
+    } else if (id === 'template') {
+      navigation.navigate('Main', { screen: 'Templates' });
     } else if (id !== 'undo') {
-      dispatch(setActiveTool(id));
+      dispatch(setActiveTool(id as ToolType));
     }
   };
 
   return (
     <LinearGradient
-      colors={['transparent', Colors.background]}
+      colors={['transparent', colors.background]}
       style={styles.gradient}
     >
-      <View style={styles.toolbar}>
-        {TOOLS.map((tool) => {
-          const isActive = activeTool === tool.id;
-          return (
-            <TouchableOpacity
-              key={tool.id}
-              onPress={() => handlePress(tool.id)}
-              style={[styles.toolButton, isActive && styles.toolButtonActive]}
-              activeOpacity={0.7}
-            >
-              {isActive && (
-                <View style={styles.activeGlow} />
-              )}
-              <Text style={[styles.toolIcon, isActive && styles.toolIconActive]}>
-                {tool.icon}
-              </Text>
-              <Text style={[styles.toolLabel, isActive && styles.toolLabelActive]}>
-                {tool.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+      <View style={[styles.toolbar, { backgroundColor: colors.surfaceElevated, borderColor: colors.border, shadowColor: colors.gold }]}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {TOOLS.map((tool) => {
+            const isActive = activeTool === tool.id;
+            const isBusy = (tool.id === 'cloud' && savingCloud) || (tool.id === 'download' && savingDevice);
+            const isAction = tool.id === 'cloud' || tool.id === 'download';
+            return (
+              <TouchableOpacity
+                key={tool.id}
+                onPress={() => handlePress(tool.id)}
+                style={[styles.toolButton, isActive && styles.toolButtonActive]}
+                activeOpacity={0.7}
+                disabled={isBusy}
+              >
+                {isActive && (
+                  <View style={[styles.activeGlow, { borderColor: colors.gold }]} />
+                )}
+                <Text style={[
+                  styles.toolIcon,
+                  { color: colors.grayLight },
+                  isActive && { color: colors.gold },
+                  isAction && { color: colors.gold },
+                ]}>
+                  {isBusy ? '…' : tool.icon}
+                </Text>
+                <Text style={[
+                  styles.toolLabel,
+                  { color: colors.grayLight },
+                  isActive && { color: colors.gold },
+                  isAction && { color: colors.gold },
+                ]}>
+                  {tool.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
       </View>
     </LinearGradient>
   );
@@ -82,27 +120,27 @@ const styles = StyleSheet.create({
     paddingTop: 40,
   },
   toolbar: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    backgroundColor: Colors.surfaceElevated,
     marginHorizontal: 16,
     marginBottom: Platform.OS === 'ios' ? 32 : 16,
     borderRadius: 24,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
+    paddingVertical: 10,
     borderWidth: 1,
-    borderColor: Colors.border,
-    shadowColor: Colors.gold,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 8,
+    overflow: 'hidden',
+  },
+  scrollContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    gap: 4,
   },
   toolButton: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 48,
+    width: 56,
     height: 52,
     borderRadius: 12,
     position: 'relative',
@@ -118,24 +156,15 @@ const styles = StyleSheet.create({
     bottom: 0,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.gold,
   },
   toolIcon: {
     fontSize: 20,
-    color: Colors.grayLight,
     marginBottom: 2,
-  },
-  toolIconActive: {
-    color: Colors.gold,
   },
   toolLabel: {
     fontSize: 9,
-    color: Colors.grayLight,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
-  },
-  toolLabelActive: {
-    color: Colors.gold,
   },
 });
 

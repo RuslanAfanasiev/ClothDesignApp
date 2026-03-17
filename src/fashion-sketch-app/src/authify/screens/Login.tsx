@@ -8,7 +8,8 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import axios from 'axios';
+import authClient from '../../services/authClient';
+import { API_ENDPOINTS } from '../../config/api.config';
 import { useAppContext } from '../context/AppContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
@@ -18,7 +19,7 @@ type LoginNavProp = NativeStackNavigationProp<RootStackParamList, 'Login'>;
 
 const Login = () => {
   const navigation = useNavigation<LoginNavProp>();
-  const { backendUrl, setIsLoggedIn, getUserData, saveToken } = useAppContext();
+  const { setIsLoggedIn, getUserData, saveToken } = useAppContext();
   const [isCreateAccount, setIsCreateAccount] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -29,13 +30,13 @@ const Login = () => {
     setLoading(true);
     try {
       if (isCreateAccount) {
-        const response = await axios.post(`${backendUrl}/register`, { name, email, password });
+        const response = await authClient.post(API_ENDPOINTS.AUTH.REGISTER, { name, email, password });
         if (response.status === 201) {
           Alert.alert('Succes', 'Cont creat cu succes');
           setIsCreateAccount(false);
         }
       } else {
-        const response = await axios.post(`${backendUrl}/login`, { email, password });
+        const response = await authClient.post(API_ENDPOINTS.AUTH.LOGIN, { email, password });
         if (response.status === 200) {
           await saveToken(response.data.token);
           setIsLoggedIn(true);
