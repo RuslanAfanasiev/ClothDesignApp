@@ -1,4 +1,6 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import aiService, { AISuggestion } from '../../services/aiService';
+import { normalizeError } from '../../utils/normalizeError';
 
 export type ToolType = 'pen' | 'shape' | 'fabric' | 'color' | 'zoom';
 
@@ -16,57 +18,80 @@ export interface StrokePath {
 }
 
 interface CanvasState {
-  pathsByProject: Record<string, StrokePath[]>;
-  historyByProject: Record<string, StrokePath[][]>;
-  templateByProject: Record<string, string | null>;
+  // Active sketch key: sketchId for existing sketches, "new_<projectId>" for unsaved ones
+  activeSketchKey: string | null;
+  pathsBySketch: Record<string, StrokePath[]>;
+  historyBySketch: Record<string, StrokePath[][]>;
+  templateBySketch: Record<string, string | null>;
   activeTool: ToolType;
   activeColor: string;
   strokeWidth: number;
   zoom: number;
   isAISuggesting: boolean;
+  aiSuggestions: AISuggestion[];
+  aiSuggestionsLoading: boolean;
+  aiSuggestionsError: string | null;
 }
 
 const initialState: CanvasState = {
-  pathsByProject: {},
-  historyByProject: {},
-  templateByProject: {},
+  activeSketchKey: null,
+  pathsBySketch: {},
+  historyBySketch: {},
+  templateBySketch: {},
   activeTool: 'pen',
   activeColor: '#D4AF37',
   strokeWidth: 2,
   zoom: 1,
   isAISuggesting: false,
+  aiSuggestions: [],
+  aiSuggestionsLoading: false,
+  aiSuggestionsError: null,
 };
+
+export const fetchAISuggestions = createAsyncThunk(
+  'canvas/fetchAISuggestions',
+  async ({ imageUrl, context }: { imageUrl?: string; context?: string }, { rejectWithValue }) => {
+    try {
+      return await aiService.getSuggestions(imageUrl, context);
+    } catch (err: any) {
+      return rejectWithValue(normalizeError(err, 'Failed to get AI suggestions'));
+    }
+  },
+);
 
 const canvasSlice = createSlice({
   name: 'canvas',
   initialState,
   reducers: {
-    addPath(state, action: PayloadAction<{ projectId: string; path: StrokePath }>) {
-      const { projectId, path } = action.payload;
-      if (!state.pathsByProject[projectId]) state.pathsByProject[projectId] = [];
-      if (!state.historyByProject[projectId]) state.historyByProject[projectId] = [];
-      state.historyByProject[projectId].push([...state.pathsByProject[projectId]]);
-      state.pathsByProject[projectId].push(path);
+    setActiveSketchKey(state, action: PayloadAction<string | null>) {
+      state.activeSketchKey = action.payload;
     },
-    updateLastPath(state, action: PayloadAction<{ projectId: string; point: Point }>) {
-      const { projectId, point } = action.payload;
-      const paths = state.pathsByProject[projectId];
+    addPath(state, action: PayloadAction<{ sketchKey: string; path: StrokePath }>) {
+      const { sketchKey, path } = action.payload;
+      if (!state.pathsBySketch[sketchKey]) state.pathsBySketch[sketchKey] = [];
+      if (!state.historyBySketch[sketchKey]) state.historyBySketch[sketchKey] = [];
+      state.historyBySketch[sketchKey].push([...state.pathsBySketch[sketchKey]]);
+      state.pathsBySketch[sketchKey].push(path);
+    },
+    updateLastPath(state, action: PayloadAction<{ sketchKey: string; point: Point }>) {
+      const { sketchKey, point } = action.payload;
+      const paths = state.pathsBySketch[sketchKey];
       if (paths && paths.length > 0) {
         paths[paths.length - 1].points.push(point);
       }
     },
     undo(state, action: PayloadAction<string>) {
-      const projectId = action.payload;
-      const history = state.historyByProject[projectId];
+      const sketchKey = action.payload;
+      const history = state.historyBySketch[sketchKey];
       if (history && history.length > 0) {
-        state.pathsByProject[projectId] = history.pop()!;
+        state.pathsBySketch[sketchKey] = history.pop()!;
       }
     },
     clearCanvas(state, action: PayloadAction<string>) {
-      const projectId = action.payload;
-      if (!state.historyByProject[projectId]) state.historyByProject[projectId] = [];
-      state.historyByProject[projectId].push([...(state.pathsByProject[projectId] ?? [])]);
-      state.pathsByProject[projectId] = [];
+      const sketchKey = action.payload;
+      if (!state.historyBySketch[sketchKey]) state.historyBySketch[sketchKey] = [];
+      state.historyBySketch[sketchKey].push([...(state.pathsBySketch[sketchKey] ?? [])]);
+      state.pathsBySketch[sketchKey] = [];
     },
     setActiveTool(state, action: PayloadAction<ToolType>) {
       state.activeTool = action.payload;
@@ -82,15 +107,39 @@ const canvasSlice = createSlice({
     },
     setAISuggesting(state, action: PayloadAction<boolean>) {
       state.isAISuggesting = action.payload;
+      if (!action.payload) {
+        state.aiSuggestions = [];
+        state.aiSuggestionsError = null;
+      }
     },
-    setProjectTemplate(state, action: PayloadAction<{ projectId: string; templateUrl: string | null }>) {
-      const { projectId, templateUrl } = action.payload;
-      state.templateByProject[projectId] = templateUrl;
+    clearAISuggestions(state) {
+      state.aiSuggestions = [];
+      state.aiSuggestionsError = null;
     },
+    setSketchTemplate(state, action: PayloadAction<{ sketchKey: string; templateUrl: string | null }>) {
+      const { sketchKey, templateUrl } = action.payload;
+      state.templateBySketch[sketchKey] = templateUrl;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchAISuggestions.pending, (state) => {
+        state.aiSuggestionsLoading = true;
+        state.aiSuggestionsError = null;
+      })
+      .addCase(fetchAISuggestions.fulfilled, (state, action) => {
+        state.aiSuggestionsLoading = false;
+        state.aiSuggestions = action.payload.suggestions;
+      })
+      .addCase(fetchAISuggestions.rejected, (state, action) => {
+        state.aiSuggestionsLoading = false;
+        state.aiSuggestionsError = action.payload as string;
+      });
   },
 });
 
 export const {
+  setActiveSketchKey,
   addPath,
   updateLastPath,
   undo,
@@ -100,7 +149,8 @@ export const {
   setStrokeWidth,
   setZoom,
   setAISuggesting,
-  setProjectTemplate,
+  clearAISuggestions,
+  setSketchTemplate,
 } = canvasSlice.actions;
 
 export default canvasSlice.reducer;

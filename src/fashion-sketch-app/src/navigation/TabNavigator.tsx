@@ -9,17 +9,19 @@ import {
   TextInput,
   KeyboardAvoidingView,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useNavigation, useNavigationState } from '@react-navigation/native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useDispatch } from 'react-redux';
 import { useTheme } from '../theme/ThemeContext';
 import { AppColors } from '../theme/colors';
-import DashboardScreen from '../pages/dashboard/DashboardScreen';
+import DashboardScreen from '../pages/projects/screens/ProjectsScreen';
 import SettingsScreen from '../pages/settings/SettingsScreen';
-import SketchesScreen from '../pages/sketch/SketchesScreen';
-import TemplatesScreen from '../pages/templates/TemplatesScreen';
+import SketchesScreen from '../pages/sketch/screens/SketchesScreen';
+import TemplatesScreen from '../pages/templates/screens/TemplatesScreen';
 import { AppDispatch } from '../store';
 import { createProject } from '../store/slices/projectsSlice';
 
@@ -90,8 +92,12 @@ const CreateProjectModal: React.FC<CreateModalProps> = ({ visible, onClose, colo
   const handleCreate = async () => {
     if (!name.trim()) return;
     setLoading(true);
-    await dispatch(createProject({ name: name.trim(), description: description.trim() }));
+    const result = await dispatch(createProject({ name: name.trim(), description: description.trim() }));
     setLoading(false);
+    if (createProject.rejected.match(result)) {
+      Alert.alert('Error', (result.payload as string) || 'Could not create project. Please try again.');
+      return;
+    }
     setName('');
     setDescription('');
     onClose();
@@ -101,7 +107,7 @@ const CreateProjectModal: React.FC<CreateModalProps> = ({ visible, onClose, colo
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={[modalStyles.overlay, { backgroundColor: colors.overlay }]}
+        style={[modalStyles.overlay, { backgroundColor: colors.background + 'F2' }]}
       >
         <View style={[modalStyles.card, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
           <View style={[modalStyles.cornerTL, { borderColor: colors.gold }]} />
@@ -180,6 +186,25 @@ const modalStyles = StyleSheet.create({
 
 const EmptyScreen = () => null;
 
+// ─── FAB Handler (inside Tab Navigator scope to access tab state) ─────────────
+const FabHandler: React.FC<{ onOpenModal: () => void }> = ({ onOpenModal }) => {
+  const navigation = useNavigation<any>();
+  const activeIndex = useNavigationState((state) => state?.index ?? 0);
+  // Tab order: 0=Projects, 1=Templates, 2=New, 3=Sketches, 4=Settings
+  const isSketchesTab = activeIndex === 3;
+
+  const handlePress = () => {
+    if (isSketchesTab) {
+      navigation.navigate('Canvas');
+    } else {
+      onOpenModal();
+    }
+  };
+
+  const { colors } = useTheme();
+  return <CenterFAB onPress={handlePress} colors={colors} />;
+};
+
 // ─── Tab Navigator ────────────────────────────────────────────────────────────
 const TabNavigator: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -239,7 +264,7 @@ const TabNavigator: React.FC = () => {
           component={EmptyScreen}
           options={{
             tabBarButton: () => (
-              <CenterFAB onPress={() => setModalVisible(true)} colors={colors} />
+              <FabHandler onOpenModal={() => setModalVisible(true)} />
             ),
           }}
         />

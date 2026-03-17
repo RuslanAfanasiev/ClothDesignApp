@@ -39,6 +39,10 @@ import { ProjectsController } from './presentation/controllers/projects.controll
 import { SketchesController } from './presentation/controllers/sketches.controller';
 import { TemplatesController } from './presentation/controllers/templates.controller';
 import { UploadController } from './presentation/controllers/upload.controller';
+import { AiController } from './presentation/controllers/ai.controller';
+
+// AI use cases
+import { GetAISuggestionsUseCase } from './application/use-cases/ai/get-suggestions.use-case';
 
 // Guards
 import { ProjectOwnerGuard } from './presentation/guards/project-owner.guard';
@@ -54,6 +58,7 @@ import { FirebaseAuthGuard } from './shared/guards/firebase-auth.guard';
     SketchesController,
     TemplatesController,
     UploadController,
+    AiController,
   ],
   providers: [
     PrismaService,
@@ -86,6 +91,9 @@ import { FirebaseAuthGuard } from './shared/guards/firebase-auth.guard';
     ListTemplatesUseCase,
     UpdateTemplateUseCase,
     DeleteTemplateUseCase,
+
+    // AI use cases
+    GetAISuggestionsUseCase,
   ],
 })
 export class AppModule {}

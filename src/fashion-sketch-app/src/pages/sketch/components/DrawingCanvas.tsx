@@ -1,12 +1,14 @@
-import React, { useRef, useEffect } from 'react';
-import { PanResponder, View, Image, StyleSheet, Dimensions } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import React, { useRef, useEffect, useState, useImperativeHandle } from 'react';
+import { PanResponder, View, StyleSheet, LayoutChangeEvent } from 'react-native';
+import Svg, { Path, Rect, Image as SvgImage } from 'react-native-svg';
+import ViewShot from 'react-native-view-shot';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../../../store';
 import { addPath, updateLastPath, StrokePath, Point } from '../../../store/slices/canvasSlice';
-import { Colors } from '../../../theme/colors';
 
-const { width, height } = Dimensions.get('window');
+export interface DrawingCanvasHandle {
+  captureToUri: () => Promise<string>;
+}
 
 const pointsToSvgPath = (points: Point[]): string => {
   if (points.length < 2) return '';
@@ -16,39 +18,43 @@ const pointsToSvgPath = (points: Point[]): string => {
   return d.join(' ');
 };
 
-const DrawingCanvas = React.forwardRef<View, {}>((_, ref) => {
+const DrawingCanvas = React.forwardRef<DrawingCanvasHandle, {}>((_, ref) => {
   const dispatch = useDispatch<AppDispatch>();
+  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+  const viewShotRef = useRef<ViewShot>(null);
 
-  const selectedId = useSelector((state: RootState) => state.projects.selectedId);
-  const { activeColor, strokeWidth, pathsByProject, templateByProject } = useSelector(
+  const { activeColor, strokeWidth, activeSketchKey, pathsBySketch, templateBySketch } = useSelector(
     (state: RootState) => state.canvas,
   );
 
-  const paths = selectedId ? (pathsByProject[selectedId] ?? []) : [];
-  const templateUrl = selectedId ? (templateByProject[selectedId] ?? null) : null;
+  const paths = activeSketchKey ? (pathsBySketch[activeSketchKey] ?? []) : [];
+  const templateUrl = activeSketchKey ? (templateBySketch[activeSketchKey] ?? null) : null;
 
-  // Refs so PanResponder always reads the latest values (avoids stale closure)
+  useImperativeHandle(ref, () => ({
+    captureToUri: () => {
+      if (!viewShotRef.current) return Promise.reject(new Error('Canvas not ready'));
+      return viewShotRef.current.capture();
+    },
+  }));
+
   const activeColorRef = useRef(activeColor);
   const strokeWidthRef = useRef(strokeWidth);
-  const selectedIdRef = useRef(selectedId);
+  const activeSketchKeyRef = useRef(activeSketchKey);
 
   useEffect(() => { activeColorRef.current = activeColor; }, [activeColor]);
   useEffect(() => { strokeWidthRef.current = strokeWidth; }, [strokeWidth]);
-  useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
+  useEffect(() => { activeSketchKeyRef.current = activeSketchKey; }, [activeSketchKey]);
 
   const isDrawing = useRef(false);
 
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: (evt) => {
-        // Nu intercepta touch-uri din afara canvas-ului (header zone)
-        return evt.nativeEvent.locationY > 0;
-      },
+      onStartShouldSetPanResponder: (evt) => evt.nativeEvent.locationY > 0,
       onMoveShouldSetPanResponder: () => isDrawing.current,
 
       onPanResponderGrant: (evt) => {
-        const projectId = selectedIdRef.current;
-        if (!projectId) return;
+        const sketchKey = activeSketchKeyRef.current;
+        if (!sketchKey) return;
         isDrawing.current = true;
         const { locationX, locationY } = evt.nativeEvent;
         const path: StrokePath = {
@@ -58,14 +64,14 @@ const DrawingCanvas = React.forwardRef<View, {}>((_, ref) => {
           width: strokeWidthRef.current,
           tool: 'pen',
         };
-        dispatch(addPath({ projectId, path }));
+        dispatch(addPath({ sketchKey, path }));
       },
 
       onPanResponderMove: (evt) => {
-        const projectId = selectedIdRef.current;
-        if (!isDrawing.current || !projectId) return;
+        const sketchKey = activeSketchKeyRef.current;
+        if (!isDrawing.current || !sketchKey) return;
         const { locationX, locationY } = evt.nativeEvent;
-        dispatch(updateLastPath({ projectId, point: { x: locationX, y: locationY } }));
+        dispatch(updateLastPath({ sketchKey, point: { x: locationX, y: locationY } }));
       },
 
       onPanResponderRelease: () => {
@@ -74,31 +80,56 @@ const DrawingCanvas = React.forwardRef<View, {}>((_, ref) => {
     }),
   ).current;
 
+  const handleLayout = (e: LayoutChangeEvent) => {
+    const { width, height } = e.nativeEvent.layout;
+    setCanvasSize({ width, height });
+  };
+
   return (
-    <View ref={ref} style={styles.container} {...panResponder.panHandlers}>
-      {/* Layer 1: template base image */}
-      {templateUrl && (
-        <Image
-          source={{ uri: templateUrl }}
-          style={styles.templateLayer}
-          resizeMode="contain"
-          pointerEvents="none"
-        />
-      )}
-      {/* Layer 2: user drawing paths */}
-      <Svg width={width} height={height} style={StyleSheet.absoluteFillObject}>
-        {paths.map((path) => (
-          <Path
-            key={path.id}
-            d={pointsToSvgPath(path.points)}
-            stroke={path.color}
-            strokeWidth={path.width}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            fill="none"
-          />
-        ))}
-      </Svg>
+    <View
+      style={styles.container}
+      collapsable={false}
+      onLayout={handleLayout}
+      {...panResponder.panHandlers}
+    >
+      <ViewShot
+        ref={viewShotRef}
+        options={{ format: 'png', quality: 1 }}
+        style={StyleSheet.absoluteFillObject}
+      >
+        {canvasSize.width > 0 && (
+          <Svg
+            width={canvasSize.width}
+            height={canvasSize.height}
+            style={StyleSheet.absoluteFillObject}
+          >
+            <Rect x="0" y="0" width={canvasSize.width} height={canvasSize.height} fill="white" />
+
+            {templateUrl ? (
+              <SvgImage
+                x="0"
+                y="0"
+                width={canvasSize.width}
+                height={canvasSize.height}
+                href={templateUrl}
+                preserveAspectRatio="xMidYMid meet"
+              />
+            ) : null}
+
+            {paths.map((path) => (
+              <Path
+                key={path.id}
+                d={pointsToSvgPath(path.points)}
+                stroke={path.color}
+                strokeWidth={path.width}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
+            ))}
+          </Svg>
+        )}
+      </ViewShot>
     </View>
   );
 });
@@ -107,9 +138,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-  },
-  templateLayer: {
-    ...StyleSheet.absoluteFillObject,
   },
 });
 

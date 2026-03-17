@@ -1,6 +1,6 @@
 import { Module, Global } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import * as admin from 'firebase-admin';
-import * as serviceAccount from './design-app-242fe-firebase-adminsdk-fbsvc-7c949ba179.json';
 
 export const FIREBASE_ADMIN = 'FIREBASE_ADMIN';
 
@@ -9,13 +9,14 @@ export const FIREBASE_ADMIN = 'FIREBASE_ADMIN';
   providers: [
     {
       provide: FIREBASE_ADMIN,
-      useFactory: (): admin.app.App => {
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService): admin.app.App => {
         if (admin.apps.length > 0) {
           return admin.apps[0]!;
         }
         return admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
-          storageBucket: 'design-app-242fe.firebasestorage.app',
+          credential: admin.credential.applicationDefault(),
+          storageBucket: configService.getOrThrow<string>('FIREBASE_STORAGE_BUCKET'),
         });
       },
     },

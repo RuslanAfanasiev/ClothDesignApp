@@ -100,8 +100,14 @@ const projectsSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
+      .addCase(createProject.pending, (state) => {
+        state.error = null;
+      })
       .addCase(createProject.fulfilled, (state, action) => {
         state.items.unshift(action.payload);
+      })
+      .addCase(createProject.rejected, (state, action) => {
+        state.error = action.payload as string;
       })
       .addCase(updateProject.fulfilled, (state, action) => {
         const idx = state.items.findIndex((p) => p.id === action.payload.id);

@@ -12,10 +12,11 @@ import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../../../store';
 import { setActiveTool, undo, ToolType } from '../../../store/slices/canvasSlice';
+
 import { useTheme } from '../../../theme/ThemeContext';
 
 interface Tool {
-  id: ToolType | 'undo' | 'download' | 'cloud' | 'template';
+  id: ToolType | 'undo' | 'cloud' | 'download' | 'template';
   icon: string;
   label: string;
 }
@@ -28,31 +29,31 @@ const TOOLS: Tool[] = [
   { id: 'undo',     icon: '↩',  label: 'Undo' },
   { id: 'zoom',     icon: '⊕',  label: 'Zoom' },
   { id: 'template', icon: '◧',  label: 'Template' },
-  { id: 'download', icon: '⬇',  label: 'Device' },
+  { id: 'download', icon: '↓',  label: 'PNG' },
   { id: 'cloud',    icon: '☁',  label: 'Cloud' },
 ];
 
 interface Props {
   onSaveCloud?: () => void;
-  onSaveDevice?: () => void;
   savingCloud?: boolean;
+  onSaveDevice?: () => void;
   savingDevice?: boolean;
 }
 
-const BottomToolbar: React.FC<Props> = ({ onSaveCloud, onSaveDevice, savingCloud, savingDevice }) => {
+const BottomToolbar: React.FC<Props> = ({ onSaveCloud, savingCloud, onSaveDevice, savingDevice }) => {
   const dispatch = useDispatch<AppDispatch>();
   const navigation = useNavigation<any>();
   const activeTool = useSelector((state: RootState) => state.canvas.activeTool);
-  const selectedId = useSelector((state: RootState) => state.projects.selectedId);
+  const activeSketchKey = useSelector((state: RootState) => state.canvas.activeSketchKey);
   const { colors } = useTheme();
 
-  const handlePress = (id: ToolType | 'undo' | 'download' | 'cloud' | 'template') => {
-    if (id === 'undo' && selectedId) {
-      dispatch(undo(selectedId));
-    } else if (id === 'download') {
-      onSaveDevice?.();
+  const handlePress = (id: ToolType | 'undo' | 'cloud' | 'download' | 'template') => {
+    if (id === 'undo' && activeSketchKey) {
+      dispatch(undo(activeSketchKey));
     } else if (id === 'cloud') {
       onSaveCloud?.();
+    } else if (id === 'download') {
+      onSaveDevice?.();
     } else if (id === 'template') {
       navigation.navigate('Main', { screen: 'Templates' });
     } else if (id !== 'undo') {
@@ -73,8 +74,10 @@ const BottomToolbar: React.FC<Props> = ({ onSaveCloud, onSaveDevice, savingCloud
         >
           {TOOLS.map((tool) => {
             const isActive = activeTool === tool.id;
-            const isBusy = (tool.id === 'cloud' && savingCloud) || (tool.id === 'download' && savingDevice);
-            const isAction = tool.id === 'cloud' || tool.id === 'download';
+            const isCloud = tool.id === 'cloud';
+            const isDownload = tool.id === 'download';
+            const isGold = isCloud || isDownload;
+            const isBusy = (isCloud && savingCloud) || (isDownload && savingDevice);
             return (
               <TouchableOpacity
                 key={tool.id}
@@ -90,7 +93,7 @@ const BottomToolbar: React.FC<Props> = ({ onSaveCloud, onSaveDevice, savingCloud
                   styles.toolIcon,
                   { color: colors.grayLight },
                   isActive && { color: colors.gold },
-                  isAction && { color: colors.gold },
+                  isGold && { color: colors.gold },
                 ]}>
                   {isBusy ? '…' : tool.icon}
                 </Text>
@@ -98,7 +101,7 @@ const BottomToolbar: React.FC<Props> = ({ onSaveCloud, onSaveDevice, savingCloud
                   styles.toolLabel,
                   { color: colors.grayLight },
                   isActive && { color: colors.gold },
-                  isAction && { color: colors.gold },
+                  isGold && { color: colors.gold },
                 ]}>
                   {tool.label}
                 </Text>

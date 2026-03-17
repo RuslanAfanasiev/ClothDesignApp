@@ -41,8 +41,8 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FirebaseModule = exports.FIREBASE_ADMIN = void 0;
 const common_1 = require("@nestjs/common");
+const config_1 = require("@nestjs/config");
 const admin = __importStar(require("firebase-admin"));
-const serviceAccount = __importStar(require("./design-app-242fe-firebase-adminsdk-fbsvc-7c949ba179.json"));
 exports.FIREBASE_ADMIN = 'FIREBASE_ADMIN';
 let FirebaseModule = class FirebaseModule {
 };
@@ -53,13 +53,14 @@ exports.FirebaseModule = FirebaseModule = __decorate([
         providers: [
             {
                 provide: exports.FIREBASE_ADMIN,
-                useFactory: () => {
+                inject: [config_1.ConfigService],
+                useFactory: (configService) => {
                     if (admin.apps.length > 0) {
                         return admin.apps[0];
                     }
                     return admin.initializeApp({
-                        credential: admin.credential.cert(serviceAccount),
-                        storageBucket: 'design-app-242fe.firebasestorage.app',
+                        credential: admin.credential.applicationDefault(),
+                        storageBucket: configService.getOrThrow('FIREBASE_STORAGE_BUCKET'),
                     });
                 },
             },

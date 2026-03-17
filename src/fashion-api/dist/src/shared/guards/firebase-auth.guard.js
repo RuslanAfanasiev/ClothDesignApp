@@ -56,21 +56,15 @@ let FirebaseAuthGuard = class FirebaseAuthGuard {
     canActivate(context) {
         const request = context.switchToHttp().getRequest();
         const token = this.extractToken(request);
-        console.log('[Guard] Authorization header:', request.headers.authorization);
-        console.log('[Guard] Cookie jwt:', request.cookies?.jwt);
-        console.log('[Guard] Token extracted:', token ? token.slice(0, 30) + '...' : 'NULL');
-        console.log('[Guard] Secret:', this.jwtSecret ? 'loaded' : 'MISSING');
         if (!token) {
             throw new common_1.UnauthorizedException('Missing authorization token');
         }
         try {
             const payload = jwt.verify(token, this.jwtSecret);
-            console.log('[Guard] SUCCESS, user:', payload.userId, payload.sub);
             request['user'] = { uid: payload.userId, email: payload.sub };
             return true;
         }
-        catch (err) {
-            console.log('[Guard] JWT error:', err.message);
+        catch {
             throw new common_1.UnauthorizedException('Invalid or expired token');
         }
     }

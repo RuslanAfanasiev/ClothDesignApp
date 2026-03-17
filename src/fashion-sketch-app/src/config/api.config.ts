@@ -1,5 +1,8 @@
-export const API_BASE_URL = 'http://192.168.0.140:3000/api/v1';
-export const AUTH_BASE_URL = 'http://192.168.0.140:8080/api/v1.0';
+export const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://192.168.0.140:3000/api/v1';
+
+export const AUTH_BASE_URL =
+  process.env.EXPO_PUBLIC_AUTH_BASE_URL ?? 'http://192.168.0.140:8080/api/v1.0';
 
 export const API_ENDPOINTS = {
   // Projects
@@ -13,6 +16,8 @@ export const API_ENDPOINTS = {
   TEMPLATE: (id: string) => `/templates/${id}`,
   // Upload
   UPLOAD: '/upload',
+  // AI
+  AI_SUGGESTIONS: '/ai/suggestions',
   // Auth
   AUTH: {
     LOGIN: '/login',

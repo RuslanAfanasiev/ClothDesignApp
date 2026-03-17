@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,24 +12,28 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useFonts, PlayfairDisplay_700Bold_Italic } from '@expo-google-fonts/playfair-display';
-import { captureRef } from 'react-native-view-shot';
 import { useSelector, useDispatch } from 'react-redux';
-import { RootState, AppDispatch } from '../../store';
-import { useTheme } from '../../theme/ThemeContext';
-import { setAISuggesting } from '../../store/slices/canvasSlice';
+import { RootState, AppDispatch } from '../../../store';
+import { useTheme } from '../../../theme/ThemeContext';
+import { setAISuggesting, setActiveSketchKey, setSketchTemplate } from '../../../store/slices/canvasSlice';
 import * as MediaLibrary from 'expo-media-library';
-import uploadService from '../../services/uploadService';
-import { createSketch } from '../../store/slices/sketchesSlice';
-import DrawingCanvas from './components/DrawingCanvas';
-import BottomToolbar from './components/BottomToolbar';
-import AISuggestionButton from './components/AISuggestionButton';
+import uploadService from '../../../services/uploadService';
+import { createSketch, updateSketch } from '../../../store/slices/sketchesSlice';
+import { RootStackParamList } from '../../../navigation/types';
+import DrawingCanvas, { DrawingCanvasHandle } from '../components/DrawingCanvas';
+import BottomToolbar from '../components/BottomToolbar';
+import AISuggestionButton from '../components/AISuggestionButton';
 
 const CanvasScreen: React.FC = () => {
   const navigation = useNavigation();
+  const route = useRoute<RouteProp<RootStackParamList, 'Canvas'>>();
+  const editSketchId = route.params?.editSketchId;
+  const editSketchName = route.params?.editSketchName;
+
   const dispatch = useDispatch<AppDispatch>();
-  const canvasRef = useRef<View>(null);
+  const canvasRef = useRef<DrawingCanvasHandle>(null);
   const [saving, setSaving] = useState(false);
   const [savingDevice, setSavingDevice] = useState(false);
   const [nameModalVisible, setNameModalVisible] = useState(false);
@@ -41,9 +45,24 @@ const CanvasScreen: React.FC = () => {
   const { colors } = useTheme();
 
   const isAISuggesting = useSelector((state: RootState) => state.canvas.isAISuggesting);
+  const lastSketchImageUrl = useSelector((state: RootState) => {
+    if (!selectedId) return undefined;
+    const sketches = (state as any).sketches?.itemsByProject?.[selectedId];
+    return sketches && sketches.length > 0 ? sketches[sketches.length - 1]?.imageUrl : undefined;
+  });
   const [fontsLoaded] = useFonts({ PlayfairDisplay_700Bold_Italic });
 
+  const isEditing = !!editSketchId;
+  const activeSketchKey = useSelector((state: RootState) => state.canvas.activeSketchKey);
+
+  // Set active sketch key on mount if not already set by navigation
+  useEffect(() => {
+    const sketchKey = editSketchId ?? (selectedId ? `new_${selectedId}` : null);
+    if (sketchKey) dispatch(setActiveSketchKey(sketchKey));
+  }, []);
+
   const defaultSketchName = () => {
+    if (isEditing && editSketchName) return editSketchName;
     const now = new Date();
     return `${project?.name ?? 'Sketch'} — ${now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
   };
@@ -56,19 +75,34 @@ const CanvasScreen: React.FC = () => {
 
   const handleSaveCloud = async () => {
     if (!canvasRef.current || !selectedId || !sketchName.trim()) return;
-    setNameModalVisible(false);
     setSaving(true);
+    setNameModalVisible(false);
     try {
-      const uri = await captureRef(canvasRef, { format: 'png', quality: 1 });
+      const uri = await canvasRef.current.captureToUri();
       const filename = `sketch_${selectedId}_${Date.now()}.png`;
       const imageUrl = await uploadService.uploadImage(uri, filename);
-      await dispatch(
-        createSketch({
-          projectId: selectedId,
-          dto: { name: sketchName.trim(), imageUrl },
-        }),
-      );
-      Alert.alert('Saved', `"${sketchName.trim()}" saved to cloud.`);
+
+      if (isEditing && editSketchId) {
+        await dispatch(
+          updateSketch({
+            projectId: selectedId,
+            sketchId: editSketchId,
+            dto: { name: sketchName.trim(), imageUrl },
+          }),
+        );
+        if (activeSketchKey) {
+          dispatch(setSketchTemplate({ sketchKey: activeSketchKey, templateUrl: imageUrl }));
+        }
+        Alert.alert('Updated', `"${sketchName.trim()}" updated.`);
+      } else {
+        await dispatch(
+          createSketch({
+            projectId: selectedId,
+            dto: { name: sketchName.trim(), imageUrl },
+          }),
+        );
+        Alert.alert('Saved', `"${sketchName.trim()}" saved to cloud.`);
+      }
     } catch (err: any) {
       Alert.alert('Error', err.response?.data?.message ?? err.message ?? 'Could not save to cloud.');
     } finally {
@@ -85,7 +119,7 @@ const CanvasScreen: React.FC = () => {
     }
     setSavingDevice(true);
     try {
-      const uri = await captureRef(canvasRef, { format: 'png', quality: 1 });
+      const uri = await canvasRef.current.captureToUri();
       await MediaLibrary.saveToLibraryAsync(uri);
       Alert.alert('Saved', 'Sketch saved to your gallery.');
     } catch (err: any) {
@@ -114,33 +148,64 @@ const CanvasScreen: React.FC = () => {
               ]}
               numberOfLines={1}
             >
-              {project?.name ?? 'New Sketch'}
+              {isEditing ? (editSketchName ?? 'Edit Sketch') : (project?.name ?? 'New Sketch')}
             </Text>
-            <View style={[styles.headerDot, { backgroundColor: colors.gold }]} />
+            <View style={[styles.headerDot, { backgroundColor: isEditing ? colors.gold : colors.gold }]} />
           </View>
 
-          <TouchableOpacity
-            style={[styles.aiButton, { borderColor: isAISuggesting ? colors.gold : colors.border, backgroundColor: isAISuggesting ? 'rgba(212,175,55,0.12)' : 'transparent' }]}
-            onPress={() => dispatch(setAISuggesting(!isAISuggesting))}
-          >
-            <Text style={[styles.aiButtonText, { color: isAISuggesting ? colors.gold : colors.grayLight }]}>✦ AI</Text>
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={[
+                styles.aiButton,
+                {
+                  borderColor: isAISuggesting ? colors.gold : colors.border,
+                  backgroundColor: isAISuggesting ? 'rgba(212,175,55,0.12)' : 'transparent',
+                },
+              ]}
+              onPress={() => dispatch(setAISuggesting(!isAISuggesting))}
+            >
+              <Text style={[styles.aiButtonText, { color: isAISuggesting ? colors.gold : colors.grayLight }]}>
+                ✦ AI
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.saveButton, { backgroundColor: saving ? colors.goldDim : colors.gold }]}
+              onPress={openSaveModal}
+              disabled={saving || !selectedId}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.saveButtonText, { color: colors.background }]}>
+                {saving ? '…' : isEditing ? 'Update' : 'Save'}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Canvas */}
         <View style={styles.canvasWrapper}>
           <DrawingCanvas ref={canvasRef} />
-          {isAISuggesting && <AISuggestionButton />}
+          {isAISuggesting && (
+            <AISuggestionButton
+              currentSketchImageUrl={lastSketchImageUrl}
+              projectName={project?.name}
+            />
+          )}
           <BottomToolbar
             onSaveCloud={openSaveModal}
-            onSaveDevice={handleSaveDevice}
             savingCloud={saving}
+            onSaveDevice={handleSaveDevice}
             savingDevice={savingDevice}
           />
         </View>
       </SafeAreaView>
 
-      <Modal visible={nameModalVisible} transparent animationType="fade" onRequestClose={() => setNameModalVisible(false)}>
+      <Modal
+        visible={nameModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setNameModalVisible(false)}
+      >
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={[saveModalStyles.overlay, { backgroundColor: colors.overlay }]}
@@ -149,7 +214,9 @@ const CanvasScreen: React.FC = () => {
             <View style={[saveModalStyles.cornerTL, { borderColor: colors.gold }]} />
             <View style={[saveModalStyles.cornerBR, { borderColor: colors.gold }]} />
 
-            <Text style={[saveModalStyles.title, { color: colors.offWhite }]}>Save Sketch</Text>
+            <Text style={[saveModalStyles.title, { color: colors.offWhite }]}>
+              {isEditing ? 'Update Sketch' : 'Save Sketch'}
+            </Text>
             <View style={[saveModalStyles.divider, { backgroundColor: colors.border }]} />
 
             <Text style={[saveModalStyles.label, { color: colors.grayLight }]}>Sketch Name</Text>
@@ -177,7 +244,9 @@ const CanvasScreen: React.FC = () => {
                 activeOpacity={0.85}
               >
                 <View style={[saveModalStyles.saveBtn, { backgroundColor: sketchName.trim() ? colors.gold : colors.gray }]}>
-                  <Text style={[saveModalStyles.saveBtnText, { color: colors.background }]}>Save</Text>
+                  <Text style={[saveModalStyles.saveBtnText, { color: colors.background }]}>
+                    {isEditing ? 'Update' : 'Save'}
+                  </Text>
                 </View>
               </TouchableOpacity>
             </View>
@@ -189,9 +258,7 @@ const CanvasScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -206,9 +273,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerButtonText: {
-    fontSize: 16,
-  },
+  headerButtonText: { fontSize: 16 },
   headerCenter: {
     flex: 1,
     alignItems: 'center',
@@ -222,29 +287,30 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     flexShrink: 1,
   },
-  headerDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginTop: 2,
+  headerDot: { width: 6, height: 6, borderRadius: 3, marginTop: 2 },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   aiButton: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 7,
     borderRadius: 20,
     borderWidth: 1,
-    minWidth: 52,
+    minWidth: 46,
     alignItems: 'center',
   },
-  aiButtonText: {
-    fontSize: 12,
-    letterSpacing: 0.8,
-    fontWeight: '600',
+  aiButtonText: { fontSize: 12, letterSpacing: 0.8, fontWeight: '600' },
+  saveButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  canvasWrapper: {
-    flex: 1,
-    position: 'relative',
-  },
+  saveButtonText: { fontSize: 13, fontWeight: '700', letterSpacing: 0.5 },
+  canvasWrapper: { flex: 1, position: 'relative' },
 });
 
 const saveModalStyles = StyleSheet.create({

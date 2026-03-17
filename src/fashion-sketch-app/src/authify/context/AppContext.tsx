@@ -3,8 +3,20 @@ import * as SecureStore from 'expo-secure-store';
 import authClient, { setAuthToken, clearAuthToken } from '../../services/authClient';
 import { setAuthToken as setApiToken, clearAuthToken as clearApiToken } from '../../services/apiClient';
 import { API_ENDPOINTS, AUTH_BASE_URL } from '../../config/api.config';
+import { store, resetStore, persistor } from '../../store';
 
 const JWT_KEY = 'jwt_token';
+const USER_ID_KEY = 'current_user_id';
+
+const getUserIdFromToken = (token: string): string | null => {
+  try {
+    const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(base64));
+    return payload.userId ?? payload.sub ?? null;
+  } catch {
+    return null;
+  }
+};
 
 export interface UserData {
   name: string;
@@ -35,6 +47,13 @@ export const AppContextProvider = ({ children }: { children: React.ReactNode }) 
   const [userData, setUserData] = useState<UserData | null>(null);
 
   const saveToken = async (token: string) => {
+    const newUserId = getUserIdFromToken(token);
+    const storedUserId = await SecureStore.getItemAsync(USER_ID_KEY);
+    if (newUserId && storedUserId && newUserId !== storedUserId) {
+      store.dispatch(resetStore());
+      await persistor.purge();
+    }
+    if (newUserId) await SecureStore.setItemAsync(USER_ID_KEY, newUserId);
     await SecureStore.setItemAsync(JWT_KEY, token);
     setAuthToken(token);
     setApiToken(token);

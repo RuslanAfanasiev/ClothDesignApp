@@ -14,7 +14,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "../../../store";
 import { createProject } from "../../../store/slices/projectsSlice";
-import { Colors } from "../../../theme/colors";
+import { useTheme } from "../../../theme/ThemeContext";
 
 interface Props {
   fontsLoaded: boolean;
@@ -22,10 +22,12 @@ interface Props {
 
 const CreateProjectButton: React.FC<Props> = ({ fontsLoaded }) => {
   const dispatch = useDispatch<AppDispatch>();
+  const { colors } = useTheme();
   const [modalVisible, setModalVisible] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
 
   const handleCreate = async () => {
     if (!name.trim()) return;
@@ -41,29 +43,6 @@ const CreateProjectButton: React.FC<Props> = ({ fontsLoaded }) => {
 
   return (
     <>
-      <TouchableOpacity
-        onPress={() => setModalVisible(true)}
-        activeOpacity={0.85}
-        style={styles.wrapper}
-      >
-        <LinearGradient
-          colors={[Colors.goldLight, Colors.gold]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.button}
-        >
-          <Text style={styles.plus}>+</Text>
-          <Text
-            style={[
-              styles.label,
-              fontsLoaded && { fontFamily: "PlayfairDisplay_700Bold" },
-            ]}
-          >
-            New Project
-          </Text>
-        </LinearGradient>
-      </TouchableOpacity>
-
       <Modal
         visible={modalVisible}
         transparent
@@ -72,53 +51,96 @@ const CreateProjectButton: React.FC<Props> = ({ fontsLoaded }) => {
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
-          style={styles.modalOverlay}
+          style={[styles.overlay, { backgroundColor: colors.overlay }]}
         >
-          <View style={styles.modalCard}>
-            <View style={styles.modalGoldCornerTL} />
-            <View style={styles.modalGoldCornerBR} />
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: colors.surfaceElevated,
+                borderColor: colors.border,
+              },
+            ]}
+          >
+            <View style={[styles.cornerTL, { borderColor: colors.gold }]} />
+            <View style={[styles.cornerBR, { borderColor: colors.gold }]} />
 
             <Text
               style={[
-                styles.modalTitle,
+                styles.title,
+                { color: colors.offWhite },
                 fontsLoaded && { fontFamily: "PlayfairDisplay_700Bold_Italic" },
               ]}
             >
               New Collection
             </Text>
-            <View style={styles.modalDivider} />
+            <View
+              style={[styles.divider, { backgroundColor: colors.border }]}
+            />
 
-            <Text style={styles.inputLabel}>Project Name</Text>
+            <Text style={[styles.fieldLabel, { color: colors.grayLight }]}>
+              Project Name
+            </Text>
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor:
+                    focusedField === "name" ? colors.gold : colors.border,
+                  color: colors.offWhite,
+                },
+              ]}
               value={name}
               onChangeText={setName}
               placeholder="e.g. Summer Couture 2026"
-              placeholderTextColor={Colors.gray}
-              selectionColor={Colors.gold}
+              placeholderTextColor={colors.gray}
+              selectionColor={colors.gold}
+              onFocus={() => setFocusedField("name")}
+              onBlur={() => setFocusedField(null)}
             />
 
-            <Text style={[styles.inputLabel, { marginTop: 12 }]}>
+            <Text
+              style={[
+                styles.fieldLabel,
+                { color: colors.grayLight, marginTop: 12 },
+              ]}
+            >
               Description{" "}
-              <Text style={styles.inputLabelOptional}>(optional)</Text>
+              <Text style={[styles.optional, { color: colors.gray }]}>
+                (optional)
+              </Text>
             </Text>
             <TextInput
-              style={[styles.input, styles.inputMultiline]}
+              style={[
+                styles.input,
+                styles.inputMultiline,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor:
+                    focusedField === "desc" ? colors.gold : colors.border,
+                  color: colors.offWhite,
+                },
+              ]}
               value={description}
               onChangeText={setDescription}
               placeholder="Brief description..."
-              placeholderTextColor={Colors.gray}
+              placeholderTextColor={colors.gray}
               multiline
               numberOfLines={2}
-              selectionColor={Colors.gold}
+              selectionColor={colors.gold}
+              onFocus={() => setFocusedField("desc")}
+              onBlur={() => setFocusedField(null)}
             />
 
-            <View style={styles.modalActions}>
+            <View style={styles.actions}>
               <TouchableOpacity
                 onPress={() => setModalVisible(false)}
-                style={styles.cancelButton}
+                style={[styles.cancelBtn, { borderColor: colors.border }]}
               >
-                <Text style={styles.cancelText}>Cancel</Text>
+                <Text style={[styles.cancelText, { color: colors.grayLight }]}>
+                  Cancel
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -129,17 +151,21 @@ const CreateProjectButton: React.FC<Props> = ({ fontsLoaded }) => {
                 <LinearGradient
                   colors={
                     name.trim()
-                      ? [Colors.goldLight, Colors.gold]
-                      : [Colors.gray, Colors.gray]
+                      ? [colors.goldLight, colors.gold]
+                      : [colors.gray, colors.gray]
                   }
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
-                  style={styles.createButton}
+                  style={styles.createBtn}
                 >
                   {loading ? (
-                    <ActivityIndicator color={Colors.background} size="small" />
+                    <ActivityIndicator color={colors.background} size="small" />
                   ) : (
-                    <Text style={styles.createText}>Create</Text>
+                    <Text
+                      style={[styles.createText, { color: colors.background }]}
+                    >
+                      Create
+                    </Text>
                   )}
                 </LinearGradient>
               </TouchableOpacity>
@@ -152,10 +178,7 @@ const CreateProjectButton: React.FC<Props> = ({ fontsLoaded }) => {
 };
 
 const styles = StyleSheet.create({
-  wrapper: {
-    marginHorizontal: 24,
-    marginBottom: 28,
-  },
+  wrapper: { marginHorizontal: 24, marginBottom: 28 },
   button: {
     flexDirection: "row",
     alignItems: "center",
@@ -163,40 +186,28 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 14,
     gap: 10,
-    shadowColor: Colors.gold,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3,
     shadowRadius: 14,
     elevation: 8,
   },
-  plus: {
-    color: Colors.background,
-    fontSize: 22,
-    fontWeight: "300",
-    lineHeight: 24,
-  },
-  label: {
-    color: Colors.background,
-    fontSize: 15,
-    letterSpacing: 1,
-  },
-  modalOverlay: {
+  plus: { fontSize: 22, fontWeight: "300", lineHeight: 24 },
+  label: { fontSize: 15, letterSpacing: 1 },
+
+  overlay: {
     flex: 1,
-    backgroundColor: "rgba(11,11,15,0.92)",
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 24,
   },
-  modalCard: {
+  card: {
     width: "100%",
-    backgroundColor: Colors.surfaceElevated,
     borderRadius: 20,
     padding: 24,
     borderWidth: 1,
-    borderColor: Colors.border,
     position: "relative",
   },
-  modalGoldCornerTL: {
+  cornerTL: {
     position: "absolute",
     top: 0,
     left: 0,
@@ -204,10 +215,9 @@ const styles = StyleSheet.create({
     height: 28,
     borderTopWidth: 1.5,
     borderLeftWidth: 1.5,
-    borderColor: Colors.gold,
     borderTopLeftRadius: 20,
   },
-  modalGoldCornerBR: {
+  cornerBR: {
     position: "absolute",
     bottom: 0,
     right: 0,
@@ -215,79 +225,46 @@ const styles = StyleSheet.create({
     height: 28,
     borderBottomWidth: 1.5,
     borderRightWidth: 1.5,
-    borderColor: Colors.gold,
     borderBottomRightRadius: 20,
   },
-  modalTitle: {
-    color: Colors.offWhite,
-    fontSize: 22,
-    marginBottom: 12,
-    letterSpacing: 0.3,
-  },
-  modalDivider: {
-    height: 1,
-    backgroundColor: Colors.border,
-    marginBottom: 20,
-  },
-  inputLabel: {
-    color: Colors.grayLight,
+  title: { fontSize: 22, marginBottom: 12, letterSpacing: 0.3 },
+  divider: { height: 1, marginBottom: 20 },
+  fieldLabel: {
     fontSize: 11,
     letterSpacing: 1.2,
     textTransform: "uppercase",
     marginBottom: 6,
   },
-  inputLabelOptional: {
-    color: Colors.gray,
-    fontSize: 10,
-    textTransform: "none",
-    letterSpacing: 0,
-  },
+  optional: { fontSize: 10, textTransform: "none", letterSpacing: 0 },
   input: {
-    backgroundColor: Colors.surface,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: Colors.border,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    color: Colors.offWhite,
     fontSize: 14,
   },
-  inputMultiline: {
-    height: 64,
-    textAlignVertical: "top",
-    paddingTop: 12,
-  },
-  modalActions: {
+  inputMultiline: { height: 64, textAlignVertical: "top", paddingTop: 12 },
+  actions: {
     flexDirection: "row",
     justifyContent: "flex-end",
     gap: 12,
     marginTop: 24,
   },
-  cancelButton: {
+  cancelBtn: {
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
-  cancelText: {
-    color: Colors.grayLight,
-    fontSize: 13,
-    letterSpacing: 0.5,
-  },
-  createButton: {
+  cancelText: { fontSize: 13, letterSpacing: 0.5 },
+  createBtn: {
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 10,
     minWidth: 80,
     alignItems: "center",
   },
-  createText: {
-    color: Colors.background,
-    fontSize: 13,
-    fontWeight: "700",
-    letterSpacing: 0.5,
-  },
+  createText: { fontSize: 13, fontWeight: "700", letterSpacing: 0.5 },
 });
 
 export default CreateProjectButton;

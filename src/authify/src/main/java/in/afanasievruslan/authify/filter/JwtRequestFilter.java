@@ -62,7 +62,6 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         }
 
         //3. Validate the token and set security context
-
         if (jwt != null) {
             email = jwtUtil.extractEmail(jwt);
             if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {

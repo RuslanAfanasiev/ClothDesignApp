@@ -37,6 +37,8 @@ const projects_controller_1 = require("./presentation/controllers/projects.contr
 const sketches_controller_1 = require("./presentation/controllers/sketches.controller");
 const templates_controller_1 = require("./presentation/controllers/templates.controller");
 const upload_controller_1 = require("./presentation/controllers/upload.controller");
+const ai_controller_1 = require("./presentation/controllers/ai.controller");
+const get_suggestions_use_case_1 = require("./application/use-cases/ai/get-suggestions.use-case");
 const project_owner_guard_1 = require("./presentation/guards/project-owner.guard");
 const firebase_auth_guard_1 = require("./shared/guards/firebase-auth.guard");
 let AppModule = class AppModule {
@@ -53,6 +55,7 @@ exports.AppModule = AppModule = __decorate([
             sketches_controller_1.SketchesController,
             templates_controller_1.TemplatesController,
             upload_controller_1.UploadController,
+            ai_controller_1.AiController,
         ],
         providers: [
             prisma_service_1.PrismaService,
@@ -77,6 +80,7 @@ exports.AppModule = AppModule = __decorate([
             list_templates_use_case_1.ListTemplatesUseCase,
             update_template_use_case_1.UpdateTemplateUseCase,
             delete_template_use_case_1.DeleteTemplateUseCase,
+            get_suggestions_use_case_1.GetAISuggestionsUseCase,
         ],
     })
 ], AppModule);

@@ -7,7 +7,9 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  StatusBar,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import authClient from '../../services/authClient';
 import { API_ENDPOINTS } from '../../config/api.config';
 import { useAppContext } from '../context/AppContext';
@@ -55,96 +57,190 @@ const EmailVerify = () => {
     try {
       const response = await authClient.post(API_ENDPOINTS.AUTH.VERIFY_OTP, { otp: otpValue });
       if (response.status === 200) {
-        Alert.alert('Succes', 'OTP verificat cu succes');
+        Alert.alert('Succes', 'Email verificat cu succes');
         await getUserData();
         navigation.navigate('Main');
       } else {
-        Alert.alert('Eroare', 'OTP invalid');
+        Alert.alert('Eroare', 'Cod invalid');
       }
-    } catch (error) {
+    } catch {
       Alert.alert('Eroare', 'Verificarea a eșuat. Încearcă din nou.');
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Email Verification OTP</Text>
-      <Text style={styles.subtitle}>Introdu codul de 6 cifre trimis pe email</Text>
+  const isFilled = otp.every((d) => d !== '');
 
-      <View style={styles.otpContainer}>
-        {otp.map((digit, i) => (
-          <TextInput
-            key={i}
-            ref={(el) => { inputs.current[i] = el; }}
-            style={styles.otpInput}
-            value={digit}
-            onChangeText={(val) => handleChange(val, i)}
-            onKeyPress={(e) => handleKeyPress(e, i)}
-            keyboardType="numeric"
-            maxLength={1}
-            textAlign="center"
-          />
-        ))}
+  return (
+    <View style={styles.root}>
+      <StatusBar barStyle="light-content" backgroundColor="#0B0B0F" />
+
+      {/* Brand */}
+      <View style={styles.brand}>
+        <View style={styles.brandMark}>
+          <Text style={styles.brandMarkText}>✦</Text>
+        </View>
+        <Text style={styles.brandTitle}>FASHION SKETCH</Text>
       </View>
 
-      <TouchableOpacity style={styles.button} onPress={handleVerify} disabled={loading}>
-        {loading ? (
-          <ActivityIndicator color="#6a5af9" />
-        ) : (
-          <Text style={styles.buttonText}>Verify email</Text>
-        )}
+      {/* Card */}
+      <View style={styles.card}>
+        <View style={styles.cornerTL} />
+        <View style={styles.cornerBR} />
+
+        <View style={styles.iconRow}>
+          <Text style={styles.envelopeIcon}>✉</Text>
+        </View>
+
+        <Text style={styles.cardTitle}>Verify Email</Text>
+        <Text style={styles.cardSub}>
+          Enter the 6-digit code sent{'\n'}to your email address
+        </Text>
+        <View style={styles.divider} />
+
+        {/* OTP boxes */}
+        <View style={styles.otpRow}>
+          {otp.map((digit, i) => (
+            <TextInput
+              key={i}
+              ref={(el) => { inputs.current[i] = el; }}
+              style={[styles.otpBox, digit && styles.otpBoxFilled]}
+              value={digit}
+              onChangeText={(val) => handleChange(val, i)}
+              onKeyPress={(e) => handleKeyPress(e, i)}
+              keyboardType="numeric"
+              maxLength={1}
+              textAlign="center"
+              selectionColor="#D4AF37"
+            />
+          ))}
+        </View>
+
+        <TouchableOpacity
+          onPress={handleVerify}
+          disabled={loading || !isFilled}
+          activeOpacity={0.85}
+        >
+          <LinearGradient
+            colors={isFilled ? ['#E8CC6A', '#D4AF37'] : ['#2A2A38', '#2A2A38']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.btn}
+          >
+            {loading
+              ? <ActivityIndicator color="#0B0B0F" />
+              : <Text style={[styles.btnText, !isFilled && styles.btnTextDisabled]}>
+                  Verify Email
+                </Text>
+            }
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
+
+      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backRow}>
+        <Text style={styles.backText}>← Back</Text>
       </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
+    backgroundColor: '#0B0B0F',
     justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+
+  brand: { alignItems: 'center', marginBottom: 32 },
+  brandMark: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(212,175,55,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(212,175,55,0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  brandMarkText: { fontSize: 20, color: '#D4AF37' },
+  brandTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 4,
+    color: '#D4AF37',
+  },
+
+  card: {
+    backgroundColor: '#13131A',
+    borderRadius: 20,
     padding: 24,
-    backgroundColor: '#6a5af9',
+    borderWidth: 1,
+    borderColor: '#2A2A38',
+    position: 'relative',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
+  cornerTL: {
+    position: 'absolute', top: 0, left: 0,
+    width: 28, height: 28,
+    borderTopWidth: 1.5, borderLeftWidth: 1.5,
+    borderTopLeftRadius: 20, borderColor: '#D4AF37',
+  },
+  cornerBR: {
+    position: 'absolute', bottom: 0, right: 0,
+    width: 28, height: 28,
+    borderBottomWidth: 1.5, borderRightWidth: 1.5,
+    borderBottomRightRadius: 20, borderColor: '#D4AF37',
+  },
+
+  iconRow: { alignItems: 'center', marginBottom: 12 },
+  envelopeIcon: { fontSize: 36, color: '#D4AF37' },
+
+  cardTitle: {
+    fontSize: 22,
+    fontWeight: '600',
+    color: '#F0EDE6',
+    letterSpacing: 0.3,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
-  subtitle: {
-    color: '#fff',
+  cardSub: {
+    fontSize: 13,
+    color: '#6B6B80',
     textAlign: 'center',
-    marginBottom: 32,
-    opacity: 0.85,
+    lineHeight: 20,
+    letterSpacing: 0.2,
   },
-  otpContainer: {
+  divider: { height: 1, backgroundColor: '#2A2A38', marginVertical: 24 },
+
+  otpRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 24,
+    marginBottom: 28,
   },
-  otpInput: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    width: 48,
+  otpBox: {
+    width: 46,
     height: 56,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#2A2A38',
+    backgroundColor: '#1C1C26',
     fontSize: 22,
-    fontWeight: 'bold',
-    color: '#6a5af9',
+    fontWeight: '700',
+    color: '#F0EDE6',
   },
-  button: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 14,
-    alignItems: 'center',
+  otpBoxFilled: {
+    borderColor: '#D4AF37',
+    backgroundColor: 'rgba(212,175,55,0.08)',
   },
-  buttonText: {
-    color: '#6a5af9',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
+
+  btn: { borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  btnText: { fontSize: 15, fontWeight: '700', color: '#0B0B0F', letterSpacing: 0.5 },
+  btnTextDisabled: { color: '#4A4A5A' },
+
+  backRow: { alignItems: 'center', marginTop: 20 },
+  backText: { fontSize: 13, color: '#6B6B80', letterSpacing: 0.3 },
 });
 
 export default EmailVerify;
