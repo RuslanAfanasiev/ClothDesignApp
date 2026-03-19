@@ -1,13 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Sketch } from '../../services/sketchService';
-
-export interface LocalSketch extends Sketch {
-  isLocal: true;
-}
-
-interface LocalSketchesState {
-  itemsByProject: Record<string, LocalSketch[]>;
-}
+import { LocalSketch, LocalSketchesState } from "../../interfaces/sketch.interface";
 
 const initialState: LocalSketchesState = {
   itemsByProject: {},

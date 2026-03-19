@@ -11,7 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UpdateProjectDto = void 0;
 const class_validator_1 = require("class-validator");
-const project_status_vo_1 = require("../../../domain/value-objects/project-status.vo");
+const project_status_vo_1 = require("../../../domain/enums/project-status.vo");
 class UpdateProjectDto {
     name;
     description;

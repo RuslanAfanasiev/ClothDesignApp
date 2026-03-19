@@ -1,12 +1,13 @@
+import { Entity } from 'typeorm';
+
+@Entity('templates')
 export class TemplateEntity {
-  constructor(
-    public readonly id: string,
-    public name: string,
-    public isPublic: boolean,
-    public description?: string,
-    public imageUrl?: string,
-    public category?: string,
-    public readonly createdAt?: Date,
-    public updatedAt?: Date,
-  ) {}
+  private readonly id: string;
+  private name: string;
+  private isPublic: boolean;
+  private description?: string;
+  private imageUrl?: string;
+  private category?: string;
+  private readonly createdAt?: Date;
+  private updatedAt?: Date;
 }

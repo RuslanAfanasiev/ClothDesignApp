@@ -1,13 +1,13 @@
-import { ProjectStatus } from '../value-objects/project-status.vo';
+import { ProjectStatus } from '../enums/project-status.vo';
+import { Entity } from 'typeorm';
 
+@Entity('projects')
 export class ProjectEntity {
-  constructor(
-    public readonly id: string,
-    public name: string,
-    public ownerId: string,
-    public status: ProjectStatus,
-    public description?: string,
-    public readonly createdAt?: Date,
-    public updatedAt?: Date,
-  ) {}
+  private readonly id: string;
+  private name: string;
+  private ownerId: string;
+  private status: ProjectStatus;
+  private description?: string;
+  private readonly createdAt?: Date;
+  private updatedAt?: Date;
 }

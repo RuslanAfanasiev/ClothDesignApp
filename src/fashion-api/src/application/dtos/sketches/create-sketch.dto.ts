@@ -16,4 +16,8 @@ export class CreateSketchDto {
   @IsString()
   @IsOptional()
   notes?: string;
+
+  @IsString()
+  @IsOptional()
+  templateId?: string;
 }

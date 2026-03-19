@@ -1,5 +1,5 @@
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
-import { ProjectStatus } from '../../../domain/value-objects/project-status.vo';
+import { ProjectStatus } from '../../../domain/enums/project-status.vo';
 
 export class CreateProjectDto {
   @IsString()

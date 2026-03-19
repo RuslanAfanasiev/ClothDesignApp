@@ -1,27 +1,6 @@
 import apiClient from './apiClient';
 import { API_ENDPOINTS } from '../config/api.config';
-
-export interface Sketch {
-  id: string;
-  name: string;
-  projectId: string;
-  imageUrl?: string;
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateSketchDto {
-  name: string;
-  imageUrl?: string;
-  notes?: string;
-}
-
-export interface UpdateSketchDto {
-  name?: string;
-  imageUrl?: string;
-  notes?: string;
-}
+import { Sketch, CreateSketchDto, UpdateSketchDto } from "../interfaces/sketch.interface";
 
 const sketchService = {
   fetchAll: async (projectId: string): Promise<Sketch[]> => {

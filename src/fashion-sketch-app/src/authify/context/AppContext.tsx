@@ -72,7 +72,7 @@ export const AppContextProvider = ({ children }: { children: React.ReactNode }) 
         setUserData(response.data);
       }
     } catch (error) {
-      // user is not authenticated
+      
     }
   };
 

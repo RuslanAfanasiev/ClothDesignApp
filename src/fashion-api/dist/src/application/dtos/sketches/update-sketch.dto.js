@@ -15,6 +15,7 @@ class UpdateSketchDto {
     name;
     imageUrl;
     notes;
+    templateId;
 }
 exports.UpdateSketchDto = UpdateSketchDto;
 __decorate([
@@ -32,4 +33,9 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], UpdateSketchDto.prototype, "notes", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], UpdateSketchDto.prototype, "templateId", void 0);
 //# sourceMappingURL=update-sketch.dto.js.map

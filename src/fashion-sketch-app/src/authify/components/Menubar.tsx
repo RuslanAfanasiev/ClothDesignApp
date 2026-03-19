@@ -35,16 +35,16 @@ const Menubar = () => {
     setDropdownOpen(false);
     try {
       await authClient.post(API_ENDPOINTS.AUTH.SEND_OTP);
-      Alert.alert('Succes', 'OTP trimis cu succes');
+      Alert.alert('Success', 'OTP sent successfully');
       navigation.navigate('EmailVerify');
     } catch (error: any) {
-      Alert.alert('Eroare', error.response?.data?.message || error.message);
+      Alert.alert('Error', error.response?.data?.message || error.message);
     }
   };
 
   return (
     <View style={styles.navbar}>
-      <Text style={styles.logo}>Authify</Text>
+      <Text style={styles.logo}></Text>
 
       {userData ? (
         <View>

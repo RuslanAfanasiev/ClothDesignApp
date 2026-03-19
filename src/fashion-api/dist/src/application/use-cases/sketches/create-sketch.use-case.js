@@ -23,6 +23,7 @@ let CreateSketchUseCase = class CreateSketchUseCase {
             projectId: dto.projectId,
             imageUrl: dto.imageUrl,
             notes: dto.notes,
+            templateId: dto.templateId,
         });
     }
 };

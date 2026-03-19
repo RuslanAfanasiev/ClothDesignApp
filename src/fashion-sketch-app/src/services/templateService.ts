@@ -1,31 +1,6 @@
 import apiClient from './apiClient';
 import { API_ENDPOINTS } from '../config/api.config';
-
-export interface Template {
-  id: string;
-  name: string;
-  description?: string;
-  imageUrl?: string;
-  category?: string;
-  isPublic: boolean;
-  createdAt: string;
-}
-
-export interface CreateTemplateDto {
-  name: string;
-  description?: string;
-  imageUrl?: string;
-  category?: string;
-  isPublic?: boolean;
-}
-
-export interface UpdateTemplateDto {
-  name?: string;
-  description?: string;
-  imageUrl?: string;
-  category?: string;
-  isPublic?: boolean;
-}
+import { Template, CreateTemplateDto, UpdateTemplateDto } from "../interfaces/template.interface";
 
 const templateService = {
   fetchAll: async (): Promise<Template[]> => {

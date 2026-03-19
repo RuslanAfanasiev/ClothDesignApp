@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   View,
   TouchableOpacity,
@@ -6,32 +6,32 @@ import {
   Text,
   Platform,
   ScrollView,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation } from '@react-navigation/native';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState, AppDispatch } from '../../../store';
-import { setActiveTool, undo, ToolType } from '../../../store/slices/canvasSlice';
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useNavigation } from "@react-navigation/native";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState, AppDispatch } from "../../../store";
+import { setActiveTool, undo } from "../../../store/slices/canvasSlice";
+import { ToolType } from "../../../interfaces/canvas.interface";
 
-import { useTheme } from '../../../theme/ThemeContext';
+import { useTheme } from "../../../theme/ThemeContext";
+import PenOptionsPanel from "./PenOptionsPanel";
 
 interface Tool {
-  id: ToolType | 'undo' | 'cloud' | 'download' | 'template' | 'save_local';
+  id: ToolType | "undo" | "cloud" | "download" | "template" | "save_local";
   icon: string;
   label: string;
 }
 
 const TOOLS: Tool[] = [
-  { id: 'pen',        icon: '✏️', label: 'Pen' },
-  { id: 'shape',      icon: '◇',  label: 'Shape' },
-  { id: 'fabric',     icon: '⬡',  label: 'Fabric' },
-  { id: 'color',      icon: '◉',  label: 'Color' },
-  { id: 'undo',       icon: '↩',  label: 'Undo' },
-  { id: 'zoom',       icon: '⊕',  label: 'Zoom' },
-  { id: 'template',   icon: '◧',  label: 'Template' },
-  { id: 'save_local', icon: '◈',  label: 'Sketch' },
-  { id: 'download',   icon: '↓',  label: 'PNG' },
-  { id: 'cloud',      icon: '☁',  label: 'Cloud' },
+  { id: "pen", icon: "✏️", label: "Pen" },
+  { id: "eraser", icon: "⌫", label: "Erase" },
+  { id: "undo", icon: "↩", label: "Undo" },
+  { id: "zoom", icon: "⊕", label: "Zoom" },
+  { id: "template", icon: "◧", label: "Template" },
+  { id: "save_local", icon: "◈", label: "Sketch" },
+  { id: "download", icon: "↓", label: "PNG" },
+  { id: "cloud", icon: "☁", label: "Cloud" },
 ];
 
 interface Props {
@@ -43,35 +43,56 @@ interface Props {
   savingLocal?: boolean;
 }
 
-const BottomToolbar: React.FC<Props> = ({ onSaveCloud, savingCloud, onSaveDevice, savingDevice, onSaveLocal, savingLocal }) => {
+const BottomToolbar: React.FC<Props> = ({
+  onSaveCloud,
+  savingCloud,
+  onSaveDevice,
+  savingDevice,
+  onSaveLocal,
+  savingLocal,
+}) => {
   const dispatch = useDispatch<AppDispatch>();
   const navigation = useNavigation<any>();
   const activeTool = useSelector((state: RootState) => state.canvas.activeTool);
-  const activeSketchKey = useSelector((state: RootState) => state.canvas.activeSketchKey);
+  const activeSketchKey = useSelector(
+    (state: RootState) => state.canvas.activeSketchKey,
+  );
   const { colors } = useTheme();
 
-  const handlePress = (id: ToolType | 'undo' | 'cloud' | 'download' | 'template' | 'save_local') => {
-    if (id === 'undo' && activeSketchKey) {
+  const handlePress = (
+    id: ToolType | "undo" | "cloud" | "download" | "template" | "save_local",
+  ) => {
+    if (id === "undo" && activeSketchKey) {
       dispatch(undo(activeSketchKey));
-    } else if (id === 'cloud') {
+    } else if (id === "cloud") {
       onSaveCloud?.();
-    } else if (id === 'download') {
+    } else if (id === "download") {
       onSaveDevice?.();
-    } else if (id === 'save_local') {
+    } else if (id === "save_local") {
       onSaveLocal?.();
-    } else if (id === 'template') {
-      navigation.navigate('Main', { screen: 'Templates' });
-    } else if (id !== 'undo') {
+    } else if (id === "template") {
+      navigation.navigate("Main", { screen: "Templates" });
+    } else if (id !== "undo") {
       dispatch(setActiveTool(id as ToolType));
     }
   };
 
   return (
     <LinearGradient
-      colors={['transparent', colors.background]}
+      colors={["transparent", colors.background]}
       style={styles.gradient}
     >
-      <View style={[styles.toolbar, { backgroundColor: colors.surfaceElevated, borderColor: colors.border, shadowColor: colors.gold }]}>
+      {activeTool === "pen" && <PenOptionsPanel />}
+      <View
+        style={[
+          styles.toolbar,
+          {
+            backgroundColor: colors.surfaceElevated,
+            borderColor: colors.border,
+            shadowColor: colors.gold,
+          },
+        ]}
+      >
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -79,11 +100,14 @@ const BottomToolbar: React.FC<Props> = ({ onSaveCloud, savingCloud, onSaveDevice
         >
           {TOOLS.map((tool) => {
             const isActive = activeTool === tool.id;
-            const isCloud = tool.id === 'cloud';
-            const isDownload = tool.id === 'download';
-            const isSaveLocal = tool.id === 'save_local';
+            const isCloud = tool.id === "cloud";
+            const isDownload = tool.id === "download";
+            const isSaveLocal = tool.id === "save_local";
             const isGold = isCloud || isDownload || isSaveLocal;
-            const isBusy = (isCloud && savingCloud) || (isDownload && savingDevice) || (isSaveLocal && savingLocal);
+            const isBusy =
+              (isCloud && savingCloud) ||
+              (isDownload && savingDevice) ||
+              (isSaveLocal && savingLocal);
             return (
               <TouchableOpacity
                 key={tool.id}
@@ -93,22 +117,28 @@ const BottomToolbar: React.FC<Props> = ({ onSaveCloud, savingCloud, onSaveDevice
                 disabled={isBusy}
               >
                 {isActive && (
-                  <View style={[styles.activeGlow, { borderColor: colors.gold }]} />
+                  <View
+                    style={[styles.activeGlow, { borderColor: colors.gold }]}
+                  />
                 )}
-                <Text style={[
-                  styles.toolIcon,
-                  { color: colors.grayLight },
-                  isActive && { color: colors.gold },
-                  isGold && { color: colors.gold },
-                ]}>
-                  {isBusy ? '…' : tool.icon}
+                <Text
+                  style={[
+                    styles.toolIcon,
+                    { color: colors.grayLight },
+                    isActive && { color: colors.gold },
+                    isGold && { color: colors.gold },
+                  ]}
+                >
+                  {isBusy ? "…" : tool.icon}
                 </Text>
-                <Text style={[
-                  styles.toolLabel,
-                  { color: colors.grayLight },
-                  isActive && { color: colors.gold },
-                  isGold && { color: colors.gold },
-                ]}>
+                <Text
+                  style={[
+                    styles.toolLabel,
+                    { color: colors.grayLight },
+                    isActive && { color: colors.gold },
+                    isGold && { color: colors.gold },
+                  ]}
+                >
                   {tool.label}
                 </Text>
               </TouchableOpacity>
@@ -122,7 +152,7 @@ const BottomToolbar: React.FC<Props> = ({ onSaveCloud, savingCloud, onSaveDevice
 
 const styles = StyleSheet.create({
   gradient: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
@@ -130,7 +160,7 @@ const styles = StyleSheet.create({
   },
   toolbar: {
     marginHorizontal: 16,
-    marginBottom: Platform.OS === 'ios' ? 32 : 16,
+    marginBottom: Platform.OS === "ios" ? 32 : 16,
     borderRadius: 24,
     paddingVertical: 10,
     borderWidth: 1,
@@ -138,27 +168,27 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 8,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   scrollContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 8,
     gap: 4,
   },
   toolButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     width: 56,
     height: 52,
     borderRadius: 12,
-    position: 'relative',
+    position: "relative",
   },
   toolButtonActive: {
-    backgroundColor: 'rgba(212,175,55,0.08)',
+    backgroundColor: "rgba(212,175,55,0.08)",
   },
   activeGlow: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
@@ -173,7 +203,7 @@ const styles = StyleSheet.create({
   toolLabel: {
     fontSize: 9,
     letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
 });
 

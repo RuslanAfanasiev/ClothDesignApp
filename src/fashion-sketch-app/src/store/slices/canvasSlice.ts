@@ -1,45 +1,15 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import aiService, { AISuggestion } from '../../services/aiService';
-import { normalizeError } from '../../utils/normalizeError';
-
-export type ToolType = 'pen' | 'shape' | 'fabric' | 'color' | 'zoom';
-
-export interface Point {
-  x: number;
-  y: number;
-}
-
-export interface StrokePath {
-  id: string;
-  points: Point[];
-  color: string;
-  width: number;
-  tool: ToolType;
-}
-
-interface CanvasState {
-  // Active sketch key: sketchId for existing sketches, "new_<projectId>" for unsaved ones
-  activeSketchKey: string | null;
-  pathsBySketch: Record<string, StrokePath[]>;
-  historyBySketch: Record<string, StrokePath[][]>;
-  templateBySketch: Record<string, string | null>;
-  activeTool: ToolType;
-  activeColor: string;
-  strokeWidth: number;
-  zoom: number;
-  isAISuggesting: boolean;
-  aiSuggestions: AISuggestion[];
-  aiSuggestionsLoading: boolean;
-  aiSuggestionsError: string | null;
-}
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import aiService from "../../services/aiService";
+import { normalizeError } from "../../utils/normalizeError";
+import { ToolType, Point, StrokePath, CanvasState } from "../../interfaces/canvas.interface";
 
 const initialState: CanvasState = {
   activeSketchKey: null,
   pathsBySketch: {},
   historyBySketch: {},
   templateBySketch: {},
-  activeTool: 'pen',
-  activeColor: '#D4AF37',
+  activeTool: "pen",
+  activeColor: "#D4AF37",
   strokeWidth: 2,
   zoom: 1,
   isAISuggesting: false,
@@ -49,31 +19,45 @@ const initialState: CanvasState = {
 };
 
 export const fetchAISuggestions = createAsyncThunk(
-  'canvas/fetchAISuggestions',
-  async ({ imageUrl, context }: { imageUrl?: string; context?: string }, { rejectWithValue }) => {
+  "canvas/fetchAISuggestions",
+  async (
+    { imageUrl, context }: { imageUrl?: string; context?: string },
+    { rejectWithValue },
+  ) => {
     try {
       return await aiService.getSuggestions(imageUrl, context);
     } catch (err: any) {
-      return rejectWithValue(normalizeError(err, 'Failed to get AI suggestions'));
+      return rejectWithValue(
+        normalizeError(err, "Failed to get AI suggestions"),
+      );
     }
   },
 );
 
 const canvasSlice = createSlice({
-  name: 'canvas',
+  name: "canvas",
   initialState,
   reducers: {
     setActiveSketchKey(state, action: PayloadAction<string | null>) {
       state.activeSketchKey = action.payload;
     },
-    addPath(state, action: PayloadAction<{ sketchKey: string; path: StrokePath }>) {
+    addPath(
+      state,
+      action: PayloadAction<{ sketchKey: string; path: StrokePath }>,
+    ) {
       const { sketchKey, path } = action.payload;
       if (!state.pathsBySketch[sketchKey]) state.pathsBySketch[sketchKey] = [];
-      if (!state.historyBySketch[sketchKey]) state.historyBySketch[sketchKey] = [];
-      state.historyBySketch[sketchKey].push([...state.pathsBySketch[sketchKey]]);
+      if (!state.historyBySketch[sketchKey])
+        state.historyBySketch[sketchKey] = [];
+      state.historyBySketch[sketchKey].push([
+        ...state.pathsBySketch[sketchKey],
+      ]);
       state.pathsBySketch[sketchKey].push(path);
     },
-    updateLastPath(state, action: PayloadAction<{ sketchKey: string; point: Point }>) {
+    updateLastPath(
+      state,
+      action: PayloadAction<{ sketchKey: string; point: Point }>,
+    ) {
       const { sketchKey, point } = action.payload;
       const paths = state.pathsBySketch[sketchKey];
       if (paths && paths.length > 0) {
@@ -89,8 +73,11 @@ const canvasSlice = createSlice({
     },
     clearCanvas(state, action: PayloadAction<string>) {
       const sketchKey = action.payload;
-      if (!state.historyBySketch[sketchKey]) state.historyBySketch[sketchKey] = [];
-      state.historyBySketch[sketchKey].push([...(state.pathsBySketch[sketchKey] ?? [])]);
+      if (!state.historyBySketch[sketchKey])
+        state.historyBySketch[sketchKey] = [];
+      state.historyBySketch[sketchKey].push([
+        ...(state.pathsBySketch[sketchKey] ?? []),
+      ]);
       state.pathsBySketch[sketchKey] = [];
     },
     setActiveTool(state, action: PayloadAction<ToolType>) {
@@ -116,7 +103,10 @@ const canvasSlice = createSlice({
       state.aiSuggestions = [];
       state.aiSuggestionsError = null;
     },
-    setSketchTemplate(state, action: PayloadAction<{ sketchKey: string; templateUrl: string | null }>) {
+    setSketchTemplate(
+      state,
+      action: PayloadAction<{ sketchKey: string; templateUrl: string | null }>,
+    ) {
       const { sketchKey, templateUrl } = action.payload;
       state.templateBySketch[sketchKey] = templateUrl;
     },

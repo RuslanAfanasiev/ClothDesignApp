@@ -19,7 +19,15 @@ let PrismaProjectRepository = class PrismaProjectRepository {
         this.prisma = prisma;
     }
     toEntity(raw) {
-        return new project_entity_1.ProjectEntity(raw.id, raw.name, raw.ownerId, raw.status, raw.description, raw.createdAt, raw.updatedAt);
+        return Object.assign(new project_entity_1.ProjectEntity(), {
+            id: raw.id,
+            name: raw.name,
+            ownerId: raw.ownerId,
+            status: raw.status,
+            description: raw.description,
+            createdAt: raw.createdAt,
+            updatedAt: raw.updatedAt,
+        });
     }
     async findById(id) {
         const raw = await this.prisma.project.findUnique({ where: { id } });
@@ -30,11 +38,11 @@ let PrismaProjectRepository = class PrismaProjectRepository {
         return rows.map((r) => this.toEntity(r));
     }
     async create(data) {
-        const raw = await this.prisma.project.create({ data });
+        const raw = await this.prisma.project.create({ data: data });
         return this.toEntity(raw);
     }
     async update(id, data) {
-        const raw = await this.prisma.project.update({ where: { id }, data });
+        const raw = await this.prisma.project.update({ where: { id }, data: data });
         return this.toEntity(raw);
     }
     async delete(id) {

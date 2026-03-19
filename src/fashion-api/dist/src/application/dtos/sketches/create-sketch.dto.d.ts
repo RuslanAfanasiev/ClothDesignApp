@@ -3,4 +3,5 @@ export declare class CreateSketchDto {
     projectId?: string;
     imageUrl?: string;
     notes?: string;
+    templateId?: string;
 }

@@ -1,12 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import sketchService, { Sketch, CreateSketchDto, UpdateSketchDto } from '../../services/sketchService';
+import sketchService from '../../services/sketchService';
 import { normalizeError } from '../../utils/normalizeError';
-
-interface SketchesState {
-  itemsByProject: Record<string, Sketch[]>;
-  loading: boolean;
-  error: string | null;
-}
+import { Sketch, SketchesState, CreateSketchDto, UpdateSketchDto } from "../../interfaces/sketch.interface";
 
 const initialState: SketchesState = {
   itemsByProject: {},
@@ -115,5 +110,5 @@ const sketchesSlice = createSlice({
 });
 
 export const { clearSketchError } = sketchesSlice.actions;
-export { Sketch };
+export type { Sketch };
 export default sketchesSlice.reducer;

@@ -1,11 +1,13 @@
+import { Entity } from 'typeorm';
+
+@Entity('sketches')
 export class SketchEntity {
-  constructor(
-    public readonly id: string,
-    public name: string,
-    public projectId: string,
-    public imageUrl?: string,
-    public notes?: string,
-    public readonly createdAt?: Date,
-    public updatedAt?: Date,
-  ) {}
+  private readonly id: string;
+  private name: string;
+  private projectId: string;
+  private imageUrl?: string;
+  private notes?: string;
+  private readonly createdAt?: Date;
+  private updatedAt?: Date;
+  private templateId?: string;
 }

@@ -1,17 +1,6 @@
 import apiClient from './apiClient';
 import { API_ENDPOINTS } from '../config/api.config';
-import { Project } from '../store/slices/projectsSlice';
-
-export interface CreateProjectDto {
-  name: string;
-  description?: string;
-}
-
-export interface UpdateProjectDto {
-  name?: string;
-  description?: string;
-  status?: 'DRAFT' | 'IN_PROGRESS' | 'COMPLETED';
-}
+import { Project, CreateProjectDto, UpdateProjectDto } from "../interfaces/project.interface";
 
 const projectService = {
   fetchAll: async (): Promise<Project[]> => {

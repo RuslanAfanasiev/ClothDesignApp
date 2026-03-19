@@ -4,8 +4,8 @@ import { useNavigation } from '@react-navigation/native';
 import { Alert } from 'react-native';
 import { RootState, AppDispatch } from '../../../store';
 import { fetchTemplates, deleteTemplate } from '../../../store/slices/templatesSlice';
-import { setProjectTemplate } from '../../../store/slices/canvasSlice';
-import { Template } from '../../../services/templateService';
+import { setSketchTemplate } from '../../../store/slices/canvasSlice';
+import { Template } from '../../../interfaces/template.interface';
 
 interface TemplatesContextType {
   templates: Template[];
@@ -50,7 +50,7 @@ export const TemplatesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       Alert.alert('No Project Selected', 'Select a project from the Projects tab first.');
       return;
     }
-    dispatch(setProjectTemplate({ projectId: selectedProjectId, templateUrl: template.imageUrl ?? null }));
+    dispatch(setSketchTemplate({ sketchKey: `new_${selectedProjectId}`, templateUrl: template.imageUrl ?? null }));
     navigation.navigate('Canvas');
   };
 

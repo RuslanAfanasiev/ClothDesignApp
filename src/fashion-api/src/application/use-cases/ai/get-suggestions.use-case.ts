@@ -1,20 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Anthropic from '@anthropic-ai/sdk';
-
-export interface AISuggestionsDto {
-  imageUrl?: string;
-  context?: string;
-}
-
-export interface AISuggestion {
-  category: string;
-  suggestion: string;
-}
-
-export interface AISuggestionsResult {
-  suggestions: AISuggestion[];
-}
+import { AISuggestionsDto } from '../../dtos/ai/ai-suggestions.dto';
+import { AISuggestion } from '../../dtos/ai/ai-suggestion.interface';
+import { AISuggestionsResult } from '../../dtos/ai/ai-suggestions-result.interface';
 
 @Injectable()
 export class GetAISuggestionsUseCase {

@@ -2,22 +2,23 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../shared/prisma/prisma.service';
 import { ProjectRepository } from '../../domain/repositories/project.repository';
 import { ProjectEntity } from '../../domain/entities/project.entity';
-import { ProjectStatus } from '../../domain/value-objects/project-status.vo';
+import { ProjectStatus } from '../../domain/enums/project-status.vo';
 
 @Injectable()
 export class PrismaProjectRepository implements ProjectRepository {
+  
   constructor(private readonly prisma: PrismaService) {}
 
   private toEntity(raw: any): ProjectEntity {
-    return new ProjectEntity(
-      raw.id,
-      raw.name,
-      raw.ownerId,
-      raw.status as ProjectStatus,
-      raw.description,
-      raw.createdAt,
-      raw.updatedAt,
-    );
+    return Object.assign(new ProjectEntity(), {
+      id: raw.id,
+      name: raw.name,
+      ownerId: raw.ownerId,
+      status: raw.status as ProjectStatus,
+      description: raw.description,
+      createdAt: raw.createdAt,
+      updatedAt: raw.updatedAt,
+    });
   }
 
   async findById(id: string): Promise<ProjectEntity | null> {
@@ -30,13 +31,18 @@ export class PrismaProjectRepository implements ProjectRepository {
     return rows.map((r) => this.toEntity(r));
   }
 
-  async create(data: Omit<ProjectEntity, 'id' | 'createdAt' | 'updatedAt'>): Promise<ProjectEntity> {
-    const raw = await this.prisma.project.create({ data });
+  async create(
+    data: Omit<ProjectEntity, 'id' | 'createdAt' | 'updatedAt'>,
+  ): Promise<ProjectEntity> {
+    const raw = await this.prisma.project.create({ data: data as any });
     return this.toEntity(raw);
   }
 
-  async update(id: string, data: Partial<Omit<ProjectEntity, 'id' | 'createdAt' | 'updatedAt'>>): Promise<ProjectEntity> {
-    const raw = await this.prisma.project.update({ where: { id }, data });
+  async update(
+    id: string,
+    data: Partial<Omit<ProjectEntity, 'id' | 'createdAt' | 'updatedAt'>>,
+  ): Promise<ProjectEntity> {
+    const raw = await this.prisma.project.update({ where: { id }, data: data as any });
     return this.toEntity(raw);
   }
 

@@ -16,6 +16,7 @@ class CreateSketchDto {
     projectId;
     imageUrl;
     notes;
+    templateId;
 }
 exports.CreateSketchDto = CreateSketchDto;
 __decorate([
@@ -38,4 +39,9 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], CreateSketchDto.prototype, "notes", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateSketchDto.prototype, "templateId", void 0);
 //# sourceMappingURL=create-sketch.dto.js.map

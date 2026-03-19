@@ -16,7 +16,7 @@ export class ProjectOwnerGuard implements CanActivate {
     const projectId = request.params.id ?? request.params.projectId;
 
     const project = await this.projectRepository.findById(projectId);
-    if (!project || project.ownerId !== user.uid) {
+    if (!project || (project as any).ownerId !== user.uid) {
       throw new ForbiddenException('Access denied');
     }
     return true;

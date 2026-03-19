@@ -1,6 +1,7 @@
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { FirebaseAuthGuard } from '../../shared/guards/firebase-auth.guard';
-import { GetAISuggestionsUseCase, AISuggestionsDto } from '../../application/use-cases/ai/get-suggestions.use-case';
+import { GetAISuggestionsUseCase } from '../../application/use-cases/ai/get-suggestions.use-case';
+import { AISuggestionsDto } from '../../application/dtos/ai/ai-suggestions.dto';
 import { IsOptional, IsString, IsUrl } from 'class-validator';
 
 class AISuggestionsRequestDto implements AISuggestionsDto {

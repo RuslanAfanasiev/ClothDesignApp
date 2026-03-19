@@ -8,16 +8,16 @@ export class PrismaTemplateRepository implements TemplateRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   private toEntity(raw: any): TemplateEntity {
-    return new TemplateEntity(
-      raw.id,
-      raw.name,
-      raw.isPublic,
-      raw.description,
-      raw.imageUrl,
-      raw.category,
-      raw.createdAt,
-      raw.updatedAt,
-    );
+    return Object.assign(new TemplateEntity(), {
+      id: raw.id,
+      name: raw.name,
+      isPublic: raw.isPublic,
+      description: raw.description,
+      imageUrl: raw.imageUrl,
+      category: raw.category,
+      createdAt: raw.createdAt,
+      updatedAt: raw.updatedAt,
+    });
   }
 
   async findById(id: string): Promise<TemplateEntity | null> {
@@ -31,12 +31,12 @@ export class PrismaTemplateRepository implements TemplateRepository {
   }
 
   async create(data: Omit<TemplateEntity, 'id' | 'createdAt' | 'updatedAt'>): Promise<TemplateEntity> {
-    const raw = await this.prisma.template.create({ data });
+    const raw = await this.prisma.template.create({ data: data as any });
     return this.toEntity(raw);
   }
 
   async update(id: string, data: Partial<Omit<TemplateEntity, 'id' | 'createdAt' | 'updatedAt'>>): Promise<TemplateEntity> {
-    const raw = await this.prisma.template.update({ where: { id }, data });
+    const raw = await this.prisma.template.update({ where: { id }, data: data as any });
     return this.toEntity(raw);
   }
 

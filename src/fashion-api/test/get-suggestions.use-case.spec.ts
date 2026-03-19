@@ -1,4 +1,4 @@
-import { GetAISuggestionsUseCase } from './get-suggestions.use-case';
+import { GetAISuggestionsUseCase } from '../src/application/use-cases/ai/get-suggestions.use-case';
 import { ConfigService } from '@nestjs/config';
 
 jest.mock('@anthropic-ai/sdk', () => {

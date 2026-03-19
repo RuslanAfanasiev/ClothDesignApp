@@ -1,27 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import projectService, { CreateProjectDto, UpdateProjectDto } from '../../services/projectService';
+import projectService from '../../services/projectService';
 import { normalizeError } from '../../utils/normalizeError';
-
-export type ProjectStatus = 'DRAFT' | 'IN_PROGRESS' | 'COMPLETED';
-
-export interface Project {
-  id: string;
-  name: string;
-  description?: string;
-  ownerId: string;
-  status: ProjectStatus;
-  createdAt: string;
-  updatedAt: string;
-  sketchCount?: number;
-  previewUrl?: string;
-}
-
-interface ProjectsState {
-  items: Project[];
-  loading: boolean;
-  error: string | null;
-  selectedId: string | null;
-}
+import { Project, ProjectsState, CreateProjectDto, UpdateProjectDto } from "../../interfaces/project.interface";
 
 const initialState: ProjectsState = {
   items: [],
@@ -125,4 +105,5 @@ const projectsSlice = createSlice({
 });
 
 export const { selectProject, clearError } = projectsSlice.actions;
+export type { Project };
 export default projectsSlice.reducer;

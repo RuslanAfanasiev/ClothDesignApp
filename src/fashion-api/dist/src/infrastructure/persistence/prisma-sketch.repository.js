@@ -19,7 +19,16 @@ let PrismaSketchRepository = class PrismaSketchRepository {
         this.prisma = prisma;
     }
     toEntity(raw) {
-        return new sketch_entity_1.SketchEntity(raw.id, raw.name, raw.projectId, raw.imageUrl, raw.notes, raw.createdAt, raw.updatedAt);
+        return Object.assign(new sketch_entity_1.SketchEntity(), {
+            id: raw.id,
+            name: raw.name,
+            projectId: raw.projectId,
+            imageUrl: raw.imageUrl,
+            notes: raw.notes,
+            templateId: raw.templateId,
+            createdAt: raw.createdAt,
+            updatedAt: raw.updatedAt,
+        });
     }
     async findById(id) {
         const raw = await this.prisma.sketch.findUnique({ where: { id } });
@@ -30,11 +39,11 @@ let PrismaSketchRepository = class PrismaSketchRepository {
         return rows.map((r) => this.toEntity(r));
     }
     async create(data) {
-        const raw = await this.prisma.sketch.create({ data });
+        const raw = await this.prisma.sketch.create({ data: data });
         return this.toEntity(raw);
     }
     async update(id, data) {
-        const raw = await this.prisma.sketch.update({ where: { id }, data });
+        const raw = await this.prisma.sketch.update({ where: { id }, data: data });
         return this.toEntity(raw);
     }
     async delete(id) {

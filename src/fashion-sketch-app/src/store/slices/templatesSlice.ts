@@ -1,12 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import templateService, { Template, CreateTemplateDto, UpdateTemplateDto } from '../../services/templateService';
+import templateService from '../../services/templateService';
 import { normalizeError } from '../../utils/normalizeError';
-
-interface TemplatesState {
-  items: Template[];
-  loading: boolean;
-  error: string | null;
-}
+import { Template, TemplatesState, CreateTemplateDto, UpdateTemplateDto } from "../../interfaces/template.interface";
 
 const initialState: TemplatesState = {
   items: [],
@@ -97,5 +92,5 @@ const templatesSlice = createSlice({
 });
 
 export const { clearTemplateError } = templatesSlice.actions;
-export { Template };
+export type { Template };
 export default templatesSlice.reducer;

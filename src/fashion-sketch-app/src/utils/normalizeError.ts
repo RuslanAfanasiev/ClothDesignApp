@@ -4,8 +4,8 @@
  */
 export function normalizeError(err: any, fallback: string): string {
   const msg = err?.response?.data?.message;
-  if (typeof msg === 'string') return msg;
+  if (typeof msg === "string") return msg;
   if (Array.isArray(msg) && msg.length > 0) return String(msg[0]);
-  if (typeof err?.message === 'string') return err.message;
+  if (typeof err?.message === "string") return err.message;
   return fallback;
 }

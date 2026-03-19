@@ -19,7 +19,16 @@ let PrismaTemplateRepository = class PrismaTemplateRepository {
         this.prisma = prisma;
     }
     toEntity(raw) {
-        return new template_entity_1.TemplateEntity(raw.id, raw.name, raw.isPublic, raw.description, raw.imageUrl, raw.category, raw.createdAt, raw.updatedAt);
+        return Object.assign(new template_entity_1.TemplateEntity(), {
+            id: raw.id,
+            name: raw.name,
+            isPublic: raw.isPublic,
+            description: raw.description,
+            imageUrl: raw.imageUrl,
+            category: raw.category,
+            createdAt: raw.createdAt,
+            updatedAt: raw.updatedAt,
+        });
     }
     async findById(id) {
         const raw = await this.prisma.template.findUnique({ where: { id } });
@@ -30,11 +39,11 @@ let PrismaTemplateRepository = class PrismaTemplateRepository {
         return rows.map((r) => this.toEntity(r));
     }
     async create(data) {
-        const raw = await this.prisma.template.create({ data });
+        const raw = await this.prisma.template.create({ data: data });
         return this.toEntity(raw);
     }
     async update(id, data) {
-        const raw = await this.prisma.template.update({ where: { id }, data });
+        const raw = await this.prisma.template.update({ where: { id }, data: data });
         return this.toEntity(raw);
     }
     async delete(id) {

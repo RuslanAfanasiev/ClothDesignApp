@@ -1,7 +1,7 @@
-import { CreateProjectUseCase } from './create-project.use-case';
-import { ProjectRepository } from '../../../domain/repositories/project.repository';
-import { ProjectStatus } from '../../../domain/value-objects/project-status.vo';
-import { ProjectEntity } from '../../../domain/entities/project.entity';
+import { CreateProjectUseCase } from '../src/application/use-cases/projects/create-project.use-case';
+import { ProjectRepository } from '../src/domain/repositories/project.repository';
+import { ProjectStatus } from '../src/domain/enums/project-status.vo';
+import { ProjectEntity } from '../src/domain/entities/project.entity';
 
 describe('CreateProjectUseCase', () => {
   let useCase: CreateProjectUseCase;
@@ -30,7 +30,10 @@ describe('CreateProjectUseCase', () => {
   });
 
   it('should create a project with DRAFT status by default', async () => {
-    const result = await useCase.execute({ name: 'Test Project', description: 'A test project' }, 'user-1');
+    const result = await useCase.execute(
+      { name: 'Test Project', description: 'A test project' },
+      'user-1',
+    );
 
     expect(repository.create).toHaveBeenCalledWith({
       name: 'Test Project',
@@ -42,7 +45,10 @@ describe('CreateProjectUseCase', () => {
   });
 
   it('should use provided status when given', async () => {
-    await useCase.execute({ name: 'Test Project', status: ProjectStatus.IN_PROGRESS }, 'user-1');
+    await useCase.execute(
+      { name: 'Test Project', status: ProjectStatus.IN_PROGRESS },
+      'user-1',
+    );
 
     expect(repository.create).toHaveBeenCalledWith(
       expect.objectContaining({ status: ProjectStatus.IN_PROGRESS }),

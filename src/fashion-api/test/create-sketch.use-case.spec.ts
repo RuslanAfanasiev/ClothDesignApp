@@ -1,6 +1,6 @@
-import { CreateSketchUseCase } from './create-sketch.use-case';
-import { SketchRepository } from '../../../domain/repositories/sketch.repository';
-import { SketchEntity } from '../../../domain/entities/sketch.entity';
+import { CreateSketchUseCase } from '../src/application/use-cases/sketches/create-sketch.use-case';
+import { SketchRepository } from '../src/domain/repositories/sketch.repository';
+import { SketchEntity } from '../src/domain/entities/sketch.entity';
 
 describe('CreateSketchUseCase', () => {
   let useCase: CreateSketchUseCase;

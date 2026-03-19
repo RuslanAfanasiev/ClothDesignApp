@@ -50,21 +50,21 @@ const EmailVerify = () => {
   const handleVerify = async () => {
     const otpValue = otp.join('');
     if (otpValue.length !== 6) {
-      Alert.alert('Eroare', 'Introdu codul de 6 cifre');
+      Alert.alert('Error', 'Enter a valid OTP 6 digits' );
       return;
     }
     setLoading(true);
     try {
       const response = await authClient.post(API_ENDPOINTS.AUTH.VERIFY_OTP, { otp: otpValue });
       if (response.status === 200) {
-        Alert.alert('Succes', 'Email verificat cu succes');
+        Alert.alert('Success', 'Email verified successfully');
         await getUserData();
         navigation.navigate('Main');
       } else {
-        Alert.alert('Eroare', 'Cod invalid');
+        Alert.alert('Error', 'Invalid code. Please try again.');
       }
     } catch {
-      Alert.alert('Eroare', 'Verificarea a eșuat. Încearcă din nou.');
+      Alert.alert('Error', 'Verification failed. Please try again.');
     } finally {
       setLoading(false);
     }

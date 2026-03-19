@@ -8,15 +8,16 @@ export class PrismaSketchRepository implements SketchRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   private toEntity(raw: any): SketchEntity {
-    return new SketchEntity(
-      raw.id,
-      raw.name,
-      raw.projectId,
-      raw.imageUrl,
-      raw.notes,
-      raw.createdAt,
-      raw.updatedAt,
-    );
+    return Object.assign(new SketchEntity(), {
+      id: raw.id,
+      name: raw.name,
+      projectId: raw.projectId,
+      imageUrl: raw.imageUrl,
+      notes: raw.notes,
+      templateId: raw.templateId,
+      createdAt: raw.createdAt,
+      updatedAt: raw.updatedAt,
+    });
   }
 
   async findById(id: string): Promise<SketchEntity | null> {
@@ -30,12 +31,12 @@ export class PrismaSketchRepository implements SketchRepository {
   }
 
   async create(data: Omit<SketchEntity, 'id' | 'createdAt' | 'updatedAt'>): Promise<SketchEntity> {
-    const raw = await this.prisma.sketch.create({ data });
+    const raw = await this.prisma.sketch.create({ data: data as any });
     return this.toEntity(raw);
   }
 
   async update(id: string, data: Partial<Omit<SketchEntity, 'id' | 'createdAt' | 'updatedAt'>>): Promise<SketchEntity> {
-    const raw = await this.prisma.sketch.update({ where: { id }, data });
+    const raw = await this.prisma.sketch.update({ where: { id }, data: data as any });
     return this.toEntity(raw);
   }
 

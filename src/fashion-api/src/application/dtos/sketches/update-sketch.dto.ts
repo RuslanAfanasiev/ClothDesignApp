@@ -12,4 +12,8 @@ export class UpdateSketchDto {
   @IsString()
   @IsOptional()
   notes?: string;
+
+  @IsString()
+  @IsOptional()
+  templateId?: string;
 }

@@ -12,7 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateProjectUseCase = void 0;
 const common_1 = require("@nestjs/common");
 const project_repository_1 = require("../../../domain/repositories/project.repository");
-const project_status_vo_1 = require("../../../domain/value-objects/project-status.vo");
+const project_status_vo_1 = require("../../../domain/enums/project-status.vo");
 let CreateProjectUseCase = class CreateProjectUseCase {
     projectRepository;
     constructor(projectRepository) {
